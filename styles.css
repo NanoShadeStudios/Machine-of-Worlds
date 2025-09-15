@@ -264,12 +264,15 @@ input[type="range"],
 }
 
 header {
+    grid-row: 1;
     text-align: center;
     margin-bottom: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    position: relative;
+    z-index: 10;
 }
 
 header h1 {
@@ -363,16 +366,13 @@ header h1 {
 
 /* Page System with Smooth Transitions */
 .page {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    min-height: 100%;
+    grid-row: 2;
     opacity: 0;
     visibility: hidden;
     transform: translateX(20px);
     transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
     z-index: 1;
+    min-height: 0;
 }
 
 .page.active {
@@ -391,7 +391,8 @@ header h1 {
 
 /* Ensure proper page container positioning */
 .game-container {
-    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr;
     min-height: 100vh;
 }
 
@@ -442,7 +443,7 @@ header h1 {
     display: grid;
     grid-template-columns: 250px 1fr;
     gap: 20px;
-    height: calc(100vh - 150px);
+    height: 100%;
     min-height: 500px;
 }
 
