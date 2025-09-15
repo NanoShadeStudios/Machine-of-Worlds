@@ -1,38 +1,31 @@
 // ResourceSystem.js - Handles resource generation, decay, and management
 
 export class ResourceSystem {
-    constructor(gameState) {
+    constructor(gameState, achievementSystem = null) {
         this.gameState = gameState;
+        this.achievementSystem = achievementSystem;
     }
 
-    // Passive resource generation from owned worlds
-    generatePassiveIncome() {
+    // Get passive bonuses from owned worlds (applied to manual generation)
+    getWorldBonuses() {
         const state = this.gameState.getState();
-        if (!state || !state.worldsCreated) return;
+        if (!state || !state.worldsCreated) return { heatMultiplier: 1, fuelMultiplier: 1 };
         
-        // Each world provides passive income (scales with number of worlds)
-        const baseIncome = 0.5; // Base income per world per second
-        const worldBonus = Math.sqrt(state.worldsCreated) * baseIncome; // Diminishing returns
+        // Each world provides bonuses to manual generation - improved progression
+        const worldBonus = 1 + (state.worldsCreated * 0.15); // Increased from 10% to 15% per world
         
-        // Apply upgrade multipliers
-        let heatMultiplier = 1;
-        let fuelMultiplier = 1;
+        // Apply upgrade multipliers to bonuses
+        let heatMultiplier = worldBonus;
+        let fuelMultiplier = worldBonus;
         
         if (state.upgrades && state.upgrades.heatGenerator) {
-            heatMultiplier += state.upgrades.heatGenerator.level * 0.1;
+            heatMultiplier += state.upgrades.heatGenerator.level * 0.08; // Increased from 5% to 8% per level
         }
         if (state.upgrades && state.upgrades.fuelEfficiency) {
-            fuelMultiplier += state.upgrades.fuelEfficiency.level * 0.1;
+            fuelMultiplier += state.upgrades.fuelEfficiency.level * 0.08; // Increased from 5% to 8% per level
         }
         
-        // Generate passive resources
-        const heatGain = worldBonus * heatMultiplier;
-        const fuelGain = worldBonus * fuelMultiplier;
-        
-        state.resources.heat += heatGain;
-        state.resources.fuel += fuelGain;
-        
-        return { heat: heatGain, fuel: fuelGain };
+        return { heatMultiplier, fuelMultiplier };
     }
 
     generateResources(world) {
@@ -83,6 +76,11 @@ export class ResourceSystem {
         
         heatGain *= heatUpgradeBonus;
         fuelGain *= fuelUpgradeBonus;
+        
+        // Apply world bonuses to manual generation
+        const worldBonuses = this.getWorldBonuses();
+        heatGain *= worldBonuses.heatMultiplier;
+        fuelGain *= worldBonuses.fuelMultiplier;
         
         // Apply cross-resource upgrade bonuses
         this.applyCrossResourceBonuses({ heat: heatGain, fuel: fuelGain });
@@ -135,8 +133,11 @@ export class ResourceSystem {
         heatGain *= state.permanentBonuses.resourceEfficiency;
         fuelGain *= state.permanentBonuses.resourceEfficiency;
 
-        state.resources.heat += Math.floor(heatGain);
-        state.resources.fuel += Math.floor(fuelGain);
+        // Use the new addResources method instead of direct modification
+        this.gameState.addResources({ 
+            heat: Math.floor(heatGain), 
+            fuel: Math.floor(fuelGain) 
+        }, true); // Trigger save for manual clicks
 
         // Generate other resources (after applying primaries)
         this.generatePressure(world);
@@ -150,16 +151,11 @@ export class ResourceSystem {
     }
 
     generateResource(type) {
-        console.log(`[ResourceSystem] generateResource called for type: ${type}`);
-        const baseGain = 5;
+        const baseGain = 8; // Increased from 5 to 8 for better early game
         const state = this.gameState.getState();
         const world = state.currentWorld;
         
-        console.log(`[ResourceSystem] Current world:`, world);
-        console.log(`[ResourceSystem] Current resources:`, state.resources);
-        
         if (!world) {
-            console.log(`[ResourceSystem] No world active, returning 0`);
             return 0;
         }
         
@@ -168,8 +164,8 @@ export class ResourceSystem {
         switch (type) {
             case 'heat':
                 gain = baseGain * world.gravity;
-                // Apply heat generator upgrade
-                const heatBonus = 1 + (state.upgrades.heatGenerator.level * 0.1);
+                // Apply heat generator upgrade - improved effectiveness
+                const heatBonus = 1 + (state.upgrades.heatGenerator.level * 0.2); // Increased from 10% to 20% per level
                 gain *= heatBonus;
                 
                 // Apply world effects
@@ -185,8 +181,8 @@ export class ResourceSystem {
                 
             case 'fuel':
                 gain = baseGain * world.timeSpeed;
-                // Apply fuel efficiency upgrade
-                const fuelBonus = 1 + (state.upgrades.fuelEfficiency.level * 0.1);
+                // Apply fuel efficiency upgrade - improved effectiveness
+                const fuelBonus = 1 + (state.upgrades.fuelEfficiency.level * 0.2); // Increased from 10% to 20% per level
                 gain *= fuelBonus;
                 
                 // Apply world effects
@@ -206,14 +202,18 @@ export class ResourceSystem {
         // Apply event multipliers
         gain = this.applyEventMultipliers(type, gain);
         
-        console.log(`[ResourceSystem] Final gain for ${type}: ${gain}`);
-        console.log(`[ResourceSystem] Adding to current ${state.resources[type]}`);
+        // Use addResources method to ensure save is triggered
+        const gainAmount = Math.floor(gain);
+        this.gameState.addResources({ [type]: gainAmount }, true); // Save immediately for manual clicks
         
-        state.resources[type] += Math.floor(gain);
+        // Track manual generation for achievements
+        if (this.achievementSystem) {
+            this.achievementSystem.trackManualGeneration(type, gainAmount);
+            this.achievementSystem.trackDiscovery('generation', 'manual_' + type);
+            this.achievementSystem.incrementClick();
+        }
         
-        console.log(`[ResourceSystem] New ${type} amount: ${state.resources[type]}`);
-        
-        return Math.floor(gain);
+        return gainAmount;
     }
 
     generatePressure(world) {
@@ -266,19 +266,19 @@ export class ResourceSystem {
                 pressureGain *= (1 + (valveUpgrade.level * 0.25)); // +25% per level when Stability > 20
                 // Converts excess pressure to heat
                 if (this.gameState.resources.pressure > 80) {
-                    this.gameState.resources.heat += Math.floor(valveUpgrade.level * 2);
+                    const heatBonus = Math.floor(valveUpgrade.level * 2);
+                    this.gameState.addResources({ heat: heatBonus });
+                    
+                    // Track conversion for achievements
+                    if (this.achievementSystem) {
+                        this.achievementSystem.trackConversion('pressure', 'heat', heatBonus);
+                    }
                 }
             }
         }
         
-        // Apply resource cap limits (unless Infinite world)
-        let maxPressure = 100;
-        if (world.specialEffects && world.specialEffects.effects && world.specialEffects.effects.special === 'noResourceLimits') {
-            maxPressure = 200; // Infinite worlds have higher caps
-        }
-        
-        this.gameState.resources.pressure = Math.min(maxPressure, 
-            this.gameState.resources.pressure + Math.floor(pressureGain));
+        // Apply pressure using centralized cap system
+        this.gameState.addResources({ pressure: Math.floor(pressureGain) });
     }
 
     generateStability(world) {
@@ -335,8 +335,8 @@ export class ResourceSystem {
             }
         }
         
-        this.gameState.resources.stability = Math.max(0, Math.min(50, 
-            this.gameState.resources.stability + Math.floor(stabilityGain)));
+        // Apply stability using centralized cap system
+        this.gameState.addResources({ stability: Math.floor(stabilityGain) });
     }
 
     generateEnergy(world) {
@@ -372,19 +372,12 @@ export class ResourceSystem {
             }
         }
         
-        // Apply resource cap limits (unless Infinite world)
-        let maxEnergy = 200;
-        if (world.specialEffects && world.specialEffects.effects && world.specialEffects.effects.special === 'noResourceLimits') {
-            maxEnergy = 400; // Infinite worlds have higher caps
-        }
-        
-        this.gameState.resources.energy = Math.min(maxEnergy, 
-            this.gameState.resources.energy + Math.floor(energyGain));
+        // Apply energy gain using centralized cap system
+        this.gameState.addResources({ energy: Math.floor(energyGain) });
         
         // Energy decay based on time speed
         const decayRate = world.timeSpeed * 0.02; // Faster worlds decay energy faster
-        this.gameState.resources.energy = Math.max(0, 
-            this.gameState.resources.energy - Math.floor(decayRate));
+        this.gameState.addResources({ energy: -Math.floor(decayRate) });
     }
 
     applyCrossResourceBonuses(baseGains) {

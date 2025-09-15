@@ -37,6 +37,187 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Loading Screen Styles */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loading-content {
+    text-align: center;
+    max-width: 400px;
+    padding: 2rem;
+}
+
+.loading-title {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.loading-spinner {
+    margin-bottom: 2rem;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--progress-fill);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-progress {
+    margin-bottom: 1rem;
+}
+
+.loading-text {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.loading-bar {
+    width: 100%;
+    height: 8px;
+    background-color: var(--progress-bg);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.loading-bar-fill {
+    height: 100%;
+    background-color: var(--progress-fill);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.loading-percentage {
+    font-size: 1rem;
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.loading-details {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    margin-top: 1rem;
+    min-height: 1.2rem;
+}
+
+/* Initially hide game container until loading is complete */
+.game-container {
+    opacity: 1; /* Temporarily make visible for debugging */
+    transition: opacity 0.5s ease;
+}
+
+.game-container.loaded {
+    opacity: 1;
+}
+
+/* Loading Screen Responsive Design */
+@media (max-width: 768px) {
+    .loading-content {
+        padding: 1rem;
+        max-width: 300px;
+    }
+    
+    .loading-title {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .spinner {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .loading-text {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .loading-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .loading-content {
+        padding: 0.5rem;
+        max-width: 250px;
+    }
+}
+
+/* Accessibility Styles */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus indicators for better keyboard navigation */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+[tabindex]:focus {
+    outline: 2px solid var(--progress-fill);
+    outline-offset: 2px;
+}
+
+/* Ensure interactive elements are large enough for touch */
+button,
+input[type="checkbox"],
+input[type="range"],
+.nav-btn {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --bg-color: #000000;
+        --text-color: #ffffff;
+        --border-color: #ffffff;
+        --section-bg: #1a1a1a;
+        --item-bg: #000000;
+    }
+}
+
 .game-container {
     max-width: 1400px;
     margin: 0 auto;
@@ -115,11 +296,29 @@ header h1 {
     border-radius: 5px;
     transition: all 0.3s ease;
     font-size: 1em;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.3s ease;
 }
 
 .nav-btn:hover {
     background-color: var(--button-hover-bg);
     border-color: var(--progress-fill);
+    transform: translateY(-1px);
+}
+
+.nav-btn:hover::after {
+    left: 100%;
 }
 
 .nav-btn.active {
@@ -128,25 +327,114 @@ header h1 {
     border-color: var(--progress-fill);
 }
 
+.nav-btn.active::after {
+    display: none;
+}
+
 .nav-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background-color: var(--item-bg);
 }
 
-/* Page System */
+/* Enhanced unlock states for worlds button */
+.nav-btn.locked {
+    background-color: var(--item-bg);
+    color: #666;
+    border-color: var(--border-color);
+    opacity: 0.6;
+    cursor: not-allowed;
+    font-size: 0.9em;
+}
+
+.nav-btn.unlock-ready {
+    background-color: var(--progress-fill);
+    color: var(--bg-color);
+    border-color: var(--progress-fill);
+    font-weight: bold;
+}
+
+.nav-btn.unlocking {
+    background-color: var(--progress-fill);
+    color: var(--bg-color);
+    border-color: var(--progress-fill);
+    font-weight: bold;
+}
+
+/* Page System with Smooth Transitions */
 .page {
-    display: none;
-    animation: fadeIn 0.3s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(20px);
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+    z-index: 1;
 }
 
 .page.active {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    z-index: 2;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.page.transitioning-out {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-20px);
+    z-index: 1;
+}
+
+/* Ensure proper page container positioning */
+.game-container {
+    position: relative;
+    min-height: 100vh;
+}
+
+/* Page transition loading indicator */
+.game-container.transitioning::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--progress-fill), transparent, var(--progress-fill));
+    background-size: 200% 100%;
+    animation: loading-bar 0.6s ease-in-out;
+    z-index: 1000;
+}
+
+@keyframes loading-bar {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Improved focus states for keyboard navigation */
+.nav-btn:focus {
+    outline: 2px solid var(--progress-fill);
+    outline-offset: 2px;
+}
+
+/* Reduce motion for users with accessibility preferences */
+@media (prefers-reduced-motion: reduce) {
+    .page,
+    .nav-btn,
+    .nav-btn::after {
+        transition: none;
+    }
+    
+    .game-container.transitioning::before {
+        animation: none;
+    }
 }
 
 /* Main Game Layout - Sidebar + Content */
@@ -1377,7 +1665,7 @@ header h1 {
     display: none;
 }
 
-/* Achievements Page Styles - Grid Design */
+/* Achievements Page Styles - Grey Boxy Design */
 .achievements-header {
     text-align: center;
     margin-bottom: 30px;
@@ -1400,17 +1688,15 @@ header h1 {
 .progress-bar-container {
     width: 300px;
     height: 20px;
-    background-color: var(--progress-bg);
-    border-radius: 10px;
-    overflow: hidden;
+    background-color: var(--item-bg);
     border: 1px solid var(--border-color);
+    overflow: hidden;
 }
 
 .progress-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    background-color: var(--text-color);
     transition: width 0.5s ease;
-    border-radius: 10px;
 }
 
 .progress-text {
@@ -1429,57 +1715,52 @@ header h1 {
     padding: 20px;
     background-color: var(--section-bg);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
 }
 
 .achievement-box {
     width: 50px;
     height: 50px;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
+    border: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
     color: var(--text-color);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease;
     position: relative;
     background-color: var(--item-bg);
 }
 
 .achievement-box.unlocked {
-    background: linear-gradient(135deg, #4CAF50, #8BC34A);
-    border-color: #4CAF50;
-    color: white;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+    background-color: var(--button-hover-bg);
+    border-color: var(--text-color);
+    color: var(--text-color);
 }
 
 .achievement-box.locked {
-    background-color: #444;
-    border-color: #666;
-    color: #888;
+    background-color: var(--item-bg);
+    border-color: var(--border-color);
+    color: #666;
 }
 
 .achievement-box:hover {
-    transform: scale(1.1);
-    z-index: 10;
+    background-color: var(--item-hover-bg);
 }
 
 .achievement-box.unlocked:hover {
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+    background-color: var(--primary-button-hover-bg);
 }
 
 .achievement-box.locked:hover {
-    border-color: #999;
+    background-color: var(--item-hover-bg);
 }
 
 /* Achievement Tooltip */
 .achievement-tooltip {
     position: absolute;
-    background-color: var(--bg-color);
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
+    background-color: var(--section-bg);
+    border: 1px solid var(--border-color);
     padding: 15px;
     max-width: 300px;
     z-index: 1000;
@@ -1511,14 +1792,14 @@ header h1 {
 }
 
 .tooltip-reward {
-    background: linear-gradient(135deg, var(--highlight-color), var(--accent-color));
-    color: white;
+    background-color: var(--primary-button-bg);
+    color: var(--text-color);
     padding: 6px 10px;
-    border-radius: 15px;
     font-size: 0.8em;
     font-weight: bold;
     display: inline-block;
     margin-bottom: 8px;
+    border: 1px solid var(--border-color);
 }
 
 .tooltip-progress {
@@ -1532,8 +1813,9 @@ header h1 {
 }
 
 .achievement-tooltip.locked .tooltip-reward {
-    background: #666;
-    color: #ccc;
+    background-color: var(--item-bg);
+    color: #888;
+    border-color: var(--border-color);
 }
 
 /* World Status Section (for Main Page) */

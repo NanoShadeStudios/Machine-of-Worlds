@@ -8,135 +8,169 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen" aria-live="polite">
+        <div class="loading-content">
+            <h1 class="loading-title">The Machine of Worlds</h1>
+            <div class="loading-spinner" aria-hidden="true">
+                <div class="spinner"></div>
+            </div>
+            <div class="loading-progress">
+                <div class="loading-text" id="loadingText">Initializing game systems...</div>
+                <div class="loading-bar">
+                    <div class="loading-bar-fill" id="loadingBarFill"></div>
+                </div>
+                <div class="loading-percentage" id="loadingPercentage">0%</div>
+            </div>
+            <div class="loading-details" id="loadingDetails">Starting up...</div>
+        </div>
+    </div>
+
     <div class="game-container">
         <!-- Navigation Header -->
-        <header>
+        <header role="banner">
             <h1>The Machine of Worlds</h1>
-            <nav class="main-nav">
-                <button class="nav-btn active" data-page="main">Main</button>
-                <button class="nav-btn" data-page="worlds" id="worldsNavBtn">Worlds</button>
-                <button class="nav-btn" data-page="options">Options</button>
-                <button class="nav-btn" data-page="achievements">Achievements</button>
+            <nav class="main-nav" role="navigation" aria-label="Main navigation">
+                <button class="nav-btn active" data-page="main" aria-label="Go to main page" aria-current="page">Main</button>
+                <button class="nav-btn" data-page="worlds" id="worldsNavBtn" aria-label="Go to worlds page">Worlds</button>
+                <button class="nav-btn" data-page="options" aria-label="Go to options page">Options</button>
+                <button class="nav-btn" data-page="achievements" aria-label="Go to achievements page">Achievements</button>
             </nav>
         </header>
         
         <!-- Main Page -->
-        <div id="mainPage" class="page active">
-            <!-- Main Game Area - Left Sidebar + Right Content -->
-            <div class="main-game-layout">
-                <!-- Left Sidebar: Resources -->
-                <div class="resource-sidebar">
-                    <h3>Resources</h3>
-                    <div class="resource-list">
-                        <div class="resource-item">
-                            <span class="resource-label">Heat:</span>
-                            <span id="heatAmount" class="resource-value">0</span>
-                        </div>
-                        <div class="resource-item">
-                            <span class="resource-label">Fuel:</span>
-                            <span id="fuelAmount" class="resource-value">0</span>
-                        </div>
-                        <div class="resource-item">
-                            <span class="resource-label">Pressure:</span>
-                            <span id="pressureAmount" class="resource-value">0</span><span class="resource-max">/100</span>
-                        </div>
-                        <div class="resource-item">
-                            <span class="resource-label">Energy:</span>
-                            <span id="energyAmount" class="resource-value">0</span><span class="resource-max">/200</span>
-                        </div>
-                        <div class="resource-item">
-                            <span class="resource-label">Stability:</span>
-                            <span id="stabilityAmount" class="resource-value">0</span><span class="resource-max">/50</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Actions Section -->
-                    <div class="actions-section">
-                        <h3>Actions</h3>
-                        <div class="action-grid">
-                            <button id="generateHeatBtn" class="action-btn-small">Generate Heat</button>
-                            <button id="generateFuelBtn" class="action-btn-small">Generate Fuel</button>
-                            <button id="generateEnergyBtn" class="action-btn-small">Create Energy</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Right Content: Machine + Upgrades -->
-                <div class="main-content">
-                    <!-- Machine Area -->
-                    <div class="machine-area">
-                        <h2>The Machine</h2>
-                        <canvas id="machineCanvas" width="550" height="280"></canvas>
-                        <div class="machine-info">
-                            <p>Worlds Created: <span id="worldsCreated">0</span></p>
-                            <p>Machine Complexity: <span id="machineComplexity">0</span>%</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Upgrades Section -->
-                    <div class="upgrades-section">
-                        <h3>Upgrades</h3>
-                        <div class="upgrade-grid">
-                            <div class="upgrade-item">
-                                <div class="upgrade-header">
-                                    <span>Heat Generator</span>
-                                    <span class="upgrade-level">Level <span id="heatUpgradeLevel">0</span>/10</span>
-                                </div>
-                                <div class="upgrade-description">
-                                    Increases base Heat generation by +2 per level. Heat is generated from world thermal energy and powers most machine systems.
-                                </div>
-                                <div class="upgrade-progress">
-                                    <div class="progress-bar">
-                                        <div id="heatUpgradeProgress" class="progress-fill"></div>
-                                    </div>
-                                </div>
-                                <button id="upgradeHeatBtn" class="upgrade-btn">Upgrade (Cost: <span id="heatUpgradeCost">10</span> Heat)</button>
+        <main id="main-content" role="main" aria-label="Main game area">
+            <div id="mainPage" class="page active">
+                <!-- Main Game Area - Left Sidebar + Right Content -->
+                <div class="main-game-layout">
+                    <!-- Left Sidebar: Resources -->
+                    <aside class="resource-sidebar" role="complementary" aria-label="Resource information">
+                        <h2>Resources</h2>
+                        <div class="resource-list" role="group" aria-label="Current resource amounts">
+                            <div class="resource-item">
+                                <span class="resource-label">Heat:</span>
+                                <span id="heatAmount" class="resource-value" aria-label="Heat amount">0</span>
                             </div>
-                            
-                            <div class="upgrade-item">
-                                <div class="upgrade-header">
-                                    <span>Fuel Efficiency</span>
-                                    <span class="upgrade-level">Level <span id="fuelUpgradeLevel">0</span>/10</span>
-                                </div>
-                                <div class="upgrade-description">
-                                    Increases base Fuel generation by +1.5 per level. Fuel is extracted from world materials and required for creating new worlds.
-                                </div>
-                                <div class="upgrade-progress">
-                                    <div class="progress-bar">
-                                        <div id="fuelUpgradeProgress" class="progress-fill"></div>
-                                    </div>
-                                </div>
-                                <button id="upgradeFuelBtn" class="upgrade-btn">Upgrade (Cost: <span id="fuelUpgradeCost">15</span> Fuel)</button>
+                            <div class="resource-item">
+                                <span class="resource-label">Fuel:</span>
+                                <span id="fuelAmount" class="resource-value" aria-label="Fuel amount">0</span>
+                            </div>
+                            <div class="resource-item">
+                                <span class="resource-label">Pressure:</span>
+                                <span id="pressureAmount" class="resource-value" aria-label="Pressure amount">0</span><span class="resource-max">/100</span>
+                            </div>
+                            <div class="resource-item">
+                                <span class="resource-label">Energy:</span>
+                                <span id="energyAmount" class="resource-value" aria-label="Energy amount">0</span><span class="resource-max">/200</span>
+                            </div>
+                            <div class="resource-item">
+                                <span class="resource-label">Stability:</span>
+                                <span id="stabilityAmount" class="resource-value" aria-label="Stability amount">0</span><span class="resource-max">/50</span>
                             </div>
                         </div>
+                        
+                        <!-- Actions Section -->
+                        <section class="actions-section" aria-label="Resource generation actions">
+                            <h3>Actions</h3>
+                            <div class="action-grid" role="group">
+                                <button id="generateHeatBtn" class="action-btn-small" aria-label="Generate heat resources">Generate Heat</button>
+                                <button id="generateFuelBtn" class="action-btn-small" aria-label="Generate fuel resources">Generate Fuel</button>
+                                <button id="generateEnergyBtn" class="action-btn-small" aria-label="Create energy from heat and fuel">Create Energy</button>
+                            </div>
+                        </section>
+                    </aside>
+                    
+                    <!-- Right Content: Machine + Upgrades -->
+                    <div class="main-content">
+                        <!-- Machine Area -->
+                        <section class="machine-area" aria-label="Machine visualization">
+                            <h2>The Machine</h2>
+                            <canvas id="machineCanvas" width="550" height="280" 
+                                    aria-label="Visual representation of your machine that grows as you create worlds"
+                                    role="img"></canvas>
+                            <div class="machine-info" aria-live="polite" aria-label="Machine statistics">
+                                <p>Worlds Created: <span id="worldsCreated" aria-label="Number of worlds created">0</span></p>
+                                <p>Machine Complexity: <span id="machineComplexity" aria-label="Machine complexity percentage">0</span>%</p>
+                            </div>
+                        </section>
+                        
+                        <!-- Upgrades Section -->
+                        <section class="upgrades-section" aria-label="Machine upgrades">
+                            <h3>Upgrades</h3>
+                            <div class="upgrade-grid" role="group">
+                                <article class="upgrade-item" aria-label="Heat Generator upgrade">
+                                    <div class="upgrade-header">
+                                        <span>Heat Generator</span>
+                                        <span class="upgrade-level">Level <span id="heatUpgradeLevel">0</span>/10</span>
+                                    </div>
+                                    <div class="upgrade-description">
+                                        Increases base Heat generation by +2 per level. Heat is generated from world thermal energy and powers most machine systems.
+                                    </div>
+                                    <div class="upgrade-progress" aria-label="Upgrade progress">
+                                        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                            <div id="heatUpgradeProgress" class="progress-fill"></div>
+                                        </div>
+                                    </div>
+                                    <button id="upgradeHeatBtn" class="upgrade-btn" 
+                                            aria-label="Upgrade heat generator to increase heat generation">
+                                        Upgrade (Cost: <span id="heatUpgradeCost">10</span> Heat)
+                                    </button>
+                                </article>
+                                
+                                <article class="upgrade-item" aria-label="Fuel Efficiency upgrade">
+                                    <div class="upgrade-header">
+                                        <span>Fuel Efficiency</span>
+                                        <span class="upgrade-level">Level <span id="fuelUpgradeLevel">0</span>/10</span>
+                                    </div>
+                                    <div class="upgrade-description">
+                                        Increases base Fuel generation by +1.5 per level. Fuel is extracted from world materials and required for creating new worlds.
+                                    </div>
+                                    <div class="upgrade-progress" aria-label="Upgrade progress">
+                                        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                            <div id="fuelUpgradeProgress" class="progress-fill"></div>
+                                        </div>
+                                    </div>
+                                    <button id="upgradeFuelBtn" class="upgrade-btn" 
+                                            aria-label="Upgrade fuel efficiency to increase fuel generation">
+                                        Upgrade (Cost: <span id="fuelUpgradeCost">15</span> Fuel)
+                                    </button>
+                                </article>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
 
         <!-- World Generator Page -->
-        <div id="worldsPage" class="page">
+        <div id="worldsPage" class="page" role="main" aria-label="World generator">
             <div class="worlds-header">
                 <h2>World Generator</h2>
                 <p class="worlds-description">Create and manage worlds to enhance your machine's capabilities</p>
             </div>
             
             <!-- World Status Section - Moved here from main page -->
-            <div class="world-status-section">
+            <section class="world-status-section" aria-label="Current world status">
                 <h3>Current World Status</h3>
-                <div id="currentWorldStatus" class="world-display">
+                <div id="currentWorldStatus" class="world-display" aria-live="polite">
                     <p>No world active</p>
-                    <button id="unlockWorldsBtn" class="primary-btn disabled" style="display: block;" disabled>Need 100 Heat + 50 Fuel</button>
+                    <button id="unlockWorldsBtn" class="primary-btn disabled" 
+                            style="display: block;" disabled
+                            aria-label="Unlock world generator - requires resources">
+                        Need 100 Heat + 50 Fuel
+                    </button>
                 </div>
                 <!-- Weather Status Widget -->
-                <div id="weatherWidget" class="weather-widget" style="display:none;">
+                <div id="weatherWidget" class="weather-widget" style="display:none;" 
+                     aria-label="Current weather conditions">
                     <div class="weather-header">
-                        <span id="weatherIcon" class="weather-icon">☁️</span>
+                        <span id="weatherIcon" class="weather-icon" aria-hidden="true">☁️</span>
                         <span id="weatherName" class="weather-name">Calm</span>
                     </div>
                     <div class="weather-body">
                         <div class="weather-bar-wrapper">
-                            <div class="weather-bar">
+                            <div class="weather-bar" role="progressbar" 
+                                 aria-label="Weather duration remaining">
                                 <div id="weatherDurationFill" class="weather-bar-fill"></div>
                             </div>
                             <div class="weather-duration">
@@ -144,119 +178,151 @@
                             </div>
                         </div>
                         <div class="weather-effects">
-                            <span id="weatherEffects">+15% All | Stability +1</span>
+                            <span id="weatherEffects" aria-label="Weather effects">+15% All | Stability +1</span>
                         </div>
                     </div>
                 </div>
                 <!-- Active Events Section -->
-                <div id="activeEventsSection" class="active-events-section" style="display: none;">
+                <div id="activeEventsSection" class="active-events-section" 
+                     style="display: none;" aria-label="Active game events">
                     <div class="active-events-title">Active Events</div>
-                    <div id="activeEventsList"></div>
+                    <div id="activeEventsList" aria-live="polite"></div>
                 </div>
-            </div>
+            </section>
             
             <div class="worlds-content">
-                <div class="world-generator-section">
+                <section class="world-generator-section" aria-label="World creation controls">
                     <div class="generator-controls">
-                        <button id="createWorldBtn" class="primary-btn">Create New World</button>
-                        <div class="world-stats">
+                        <button id="createWorldBtn" class="primary-btn" 
+                                aria-label="Create a new world to enhance machine capabilities">
+                            Create New World
+                        </button>
+                        <div class="world-stats" aria-live="polite" aria-label="World statistics">
                             <span>Total Worlds Created: <strong id="totalWorldsCreated">0</strong></span>
                             <span>Active World Benefits: <span id="activeWorldBenefits">None</span></span>
                         </div>
                     </div>
                     
-                    <div id="currentWorld" class="current-world-display">
+                    <div id="currentWorld" class="current-world-display" aria-live="polite" 
+                         aria-label="Current active world information">
                         <h3>Current Active World</h3>
                         <div class="world-details">
                             <p class="empty-world">No world currently active</p>
                         </div>
                     </div>
-                </div>
+                </section>
                 
-                <div class="world-history-section">
+                <section class="world-history-section" aria-label="Previously created worlds">
                     <h3>World History</h3>
-                    <div id="worldHistory" class="world-history-list">
+                    <div id="worldHistory" class="world-history-list" aria-live="polite">
                         <p class="empty-history">No worlds created yet</p>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
         
         <!-- Options Page -->
-        <div id="optionsPage" class="page">
+        <div id="optionsPage" class="page" role="main" aria-label="Game options and settings">
             <div class="options-header">
                 <h2>Options</h2>
                 <p class="options-description">Game settings and data management</p>
             </div>
             
             <div class="options-content">
-                <div class="options-section">
+                <section class="options-section" aria-label="Save and data management">
                     <h3>Save & Data Management</h3>
-                    <div class="option-group">
+                    <div class="option-group" role="group">
                         <div class="option-item">
-                            <button id="saveGameBtn" class="option-btn primary-btn">Save Game</button>
+                            <button id="saveGameBtn" class="option-btn primary-btn" 
+                                    aria-label="Manually save your current game progress">
+                                Save Game
+                            </button>
                         </div>
                         
                         <div class="option-item">
                             <span class="option-label">Export Save Data</span>
-                            <button id="exportSaveBtn" class="option-btn">Export</button>
+                            <button id="exportSaveBtn" class="option-btn" 
+                                    aria-label="Export your save data to a file for backup">
+                                Export
+                            </button>
                         </div>
                         
                         <div class="option-item">
                             <span class="option-label">Import Save Data</span>
-                            <input type="file" id="importSaveFile" class="option-file" accept=".json" style="display:none;">
-                            <button id="importSaveBtn" class="option-btn">Import</button>
+                            <input type="file" id="importSaveFile" class="option-file" 
+                                   accept=".json" style="display:none;"
+                                   aria-label="Select save file to import">
+                            <button id="importSaveBtn" class="option-btn" 
+                                    aria-label="Import save data from a backup file">
+                                Import
+                            </button>
                         </div>
                         
                         <div class="option-item">
-                            <button id="loadGameBtn" class="option-btn">Load Game</button>
+                            <button id="loadGameBtn" class="option-btn" 
+                                    aria-label="Load your saved game progress">
+                                Load Game
+                            </button>
                         </div>
                         
                         <div class="option-item">
-                            <button id="resetGameBtn" class="option-btn danger-btn">Reset Game</button>
+                            <button id="resetGameBtn" class="option-btn danger-btn" 
+                                    aria-label="Reset all game progress - this cannot be undone"
+                                    aria-describedby="reset-warning">
+                                Reset Game
+                            </button>
+                            <span id="reset-warning" class="sr-only">Warning: This will permanently delete all your progress</span>
                         </div>
                     </div>
-                </div>
+                </section>
                 
-                <div class="options-section">
+                <section class="options-section" aria-label="Audio settings">
                     <h3>Audio Settings</h3>
-                    <div class="option-group">
+                    <div class="option-group" role="group">
                         <label class="option-item">
                             <span class="option-label">Sound Effects</span>
-                            <input type="checkbox" id="soundEffects" class="option-checkbox">
+                            <input type="checkbox" id="soundEffects" class="option-checkbox"
+                                   aria-label="Toggle sound effects on or off">
                         </label>
                         
                         <label class="option-item">
                             <span class="option-label">Background Music</span>
-                            <input type="checkbox" id="backgroundMusic" class="option-checkbox">
+                            <input type="checkbox" id="backgroundMusic" class="option-checkbox"
+                                   aria-label="Toggle background music on or off">
                         </label>
                         
                         <label class="option-item">
                             <span class="option-label">Master Volume</span>
-                            <input type="range" id="volumeSlider" class="option-slider" min="0" max="100" value="50">
-                            <span id="volumeValue" class="option-value">50%</span>
+                            <input type="range" id="volumeSlider" class="option-slider" 
+                                   min="0" max="100" value="50"
+                                   aria-label="Adjust master volume level"
+                                   aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+                            <span id="volumeValue" class="option-value" aria-live="polite">50%</span>
                         </label>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
 
         <!-- Achievements Page -->
-        <div id="achievementsPage" class="page">
+        <div id="achievementsPage" class="page" role="main" aria-label="Game achievements">
             <div class="achievements-header">
                 <h2>Achievements</h2>
-                <div class="achievements-progress-bar">
-                    <div class="progress-bar">
+                <div class="achievements-progress-bar" aria-label="Achievement progress">
+                    <div class="progress-bar" role="progressbar" 
+                         aria-valuemin="0" aria-valuemax="20" aria-valuenow="0"
+                         aria-label="Achievements completed">
                         <div id="achievementsProgress" class="progress-fill" style="width: 0%"></div>
                     </div>
-                    <span class="progress-text">
+                    <span class="progress-text" aria-live="polite">
                         <span id="achievementsUnlocked">0</span> / <span id="achievementsTotal">20</span> achievements unlocked
                     </span>
                 </div>
             </div>
             
             <div class="achievements-content">
-                <div class="achievements-grid" id="achievementsGrid">
+                <div class="achievements-grid" id="achievementsGrid" 
+                     role="grid" aria-label="Achievement grid">
                     <!-- Achievements will be dynamically populated -->
                 </div>
             </div>
@@ -264,12 +330,16 @@
     </div>
 
     <!-- Achievement Tooltip -->
-    <div id="achievementTooltip" class="achievement-tooltip">
+    <div id="achievementTooltip" class="achievement-tooltip" 
+         role="tooltip" aria-hidden="true">
         <h3 class="tooltip-title"></h3>
         <p class="tooltip-description"></p>
         <div class="tooltip-reward"></div>
         <div class="tooltip-progress"></div>
     </div>
+
+    <!-- Screen reader only text for important notifications -->
+    <div id="sr-announcements" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
 
     <!-- Scripts -->
     <script type="module" src="js/GameState.js"></script>

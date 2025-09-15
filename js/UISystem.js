@@ -5,6 +5,7 @@ export class UISystem {
         this.gameState = gameState;
         this.eventModal = null;
         this.currentPage = 'main';
+        this.isTransitioning = false;
         this.resourceDescriptions = {
             heat: "Generated from world gravity. Used for upgrades and energy creation. Essential for machine operation.",
             fuel: "Generated from world time speed. Used for upgrades and energy creation. Improves with cold worlds.",
@@ -14,51 +15,162 @@ export class UISystem {
         };
     }
 
+    // Screen reader announcement method for accessibility
+    announceToScreenReader(message) {
+        const srElement = document.getElementById('sr-announcements');
+        if (srElement) {
+            srElement.textContent = message;
+            // Clear after a delay to allow for repeated announcements
+            setTimeout(() => {
+                srElement.textContent = '';
+            }, 1000);
+        }
+    }
+
+    // Set callback for when returning to main page
+    setMainPageReturnCallback(callback) {
+        this.onMainPageReturn = callback;
+    }
+
     setupPageNavigation() {
         const navButtons = document.querySelectorAll('.nav-btn');
+        console.log('Found nav buttons:', navButtons.length);
         navButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
+                console.log('Nav button clicked:', e.target.dataset.page);
+                // Prevent navigation during transitions
+                if (this.isTransitioning) {
+                    console.log('Navigation blocked - transition in progress');
+                    return;
+                }
+                
                 const page = e.target.dataset.page;
-                console.log('[UISystem] Navigation button clicked:', page);
-                this.switchToPage(page);
+                console.log('Switching to page:', page);
+                
+                // Special handling for worlds button unlock
+                if (page === 'worlds' && btn.textContent === 'UNLOCK!!') {
+                    this.handleWorldsUnlock(btn);
+                } else {
+                    this.switchToPage(page);
+                }
             });
         });
     }
 
-    switchToPage(pageName) {
+    // Handle the exciting worlds unlock experience
+    handleWorldsUnlock(worldsBtn) {
+        const state = this.gameState.getState();
+        const heatRequired = 100;
+        const fuelRequired = 50;
         
-        // Hide all pages
-        document.querySelectorAll('.page').forEach(page => {
-            page.classList.remove('active');
-        });
-
-        // Show selected page
-        const targetPage = document.getElementById(pageName + 'Page');
-        if (targetPage) {
-            targetPage.classList.add('active');
-        } else {
+        // Check if player has enough resources
+        if (state.resources.heat >= heatRequired && state.resources.fuel >= fuelRequired && !state.unlocks.worldGenerator) {
+            // Trigger the unlock!
+            worldsBtn.textContent = 'Unlocked!';
+            worldsBtn.classList.add('unlocking');
+            
+            // Announce to screen readers
+            this.announceToScreenReader('World Generator unlocked!');
+            
+            // Call the actual unlock function
+            if (this.unlockWorldsCallback) {
+                this.unlockWorldsCallback();
+            }
+            
+            // After 1.5 seconds, change to "Worlds" and enable navigation
+            setTimeout(() => {
+                worldsBtn.textContent = 'Worlds';
+                worldsBtn.classList.remove('unlocking', 'unlock-ready');
+                // Now allow normal navigation
+                this.switchToPage('worlds');
+            }, 1500);
         }
+    }
 
-        // Update navigation buttons
+    // Set callback for worlds unlock
+    setUnlockWorldsCallback(callback) {
+        this.unlockWorldsCallback = callback;
+    }
+
+    switchToPage(pageName) {
+        // If already on the target page, do nothing
+        if (this.currentPage === pageName) return;
+        
+        const currentPageElement = this.currentPage ? document.getElementById(this.currentPage + 'Page') : null;
+        const targetPageElement = document.getElementById(pageName + 'Page');
+        
+        if (!targetPageElement) return;
+        
+        // Start transition
+        this.isTransitioning = true;
+        
+        // Add loading indicator
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) {
+            gameContainer.classList.add('transitioning');
+        }
+        
+        // Add transitioning-out class to current page
+        if (currentPageElement) {
+            currentPageElement.classList.add('transitioning-out');
+        }
+        
+        // Update navigation buttons immediately for responsiveness
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.classList.remove('active');
+            btn.removeAttribute('aria-current');
         });
         
         const activeBtn = document.querySelector(`[data-page="${pageName}"]`);
         if (activeBtn) {
             activeBtn.classList.add('active');
+            activeBtn.setAttribute('aria-current', 'page');
         }
-
-        this.currentPage = pageName;
         
-        // Update page-specific UI
-        if (pageName === 'achievements') {
-            this.updateAchievementsUI();
-        } else if (pageName === 'options') {
-            this.updateOptionsUI();
-        } else if (pageName === 'worlds') {
-            this.updateWorldsPageUI();
-        }
+        // After a short delay, show the new page
+        setTimeout(() => {
+            // Hide current page
+            if (currentPageElement) {
+                currentPageElement.classList.remove('active', 'transitioning-out');
+            }
+            
+            // Show target page
+            targetPageElement.classList.add('active');
+            
+            this.currentPage = pageName;
+            
+            // Announce page change to screen readers
+            const pageNames = {
+                main: 'Main game page',
+                worlds: 'World generator page',
+                options: 'Options and settings page',
+                achievements: 'Achievements page'
+            };
+            this.announceToScreenReader(`Switched to ${pageNames[pageName] || pageName}`);
+            
+            // Update page-specific UI after transition
+            setTimeout(() => {
+                if (pageName === 'achievements') {
+                    this.updateAchievementsUI();
+                } else if (pageName === 'options') {
+                    this.updateOptionsUI();
+                } else if (pageName === 'worlds') {
+                    this.updateWorldsPageUI();
+                } else if (pageName === 'main') {
+                    // Re-render machine and update main page when switching back
+                    if (this.onMainPageReturn) {
+                        this.onMainPageReturn();
+                    }
+                }
+                
+                // Remove loading indicator and finish transition
+                if (gameContainer) {
+                    gameContainer.classList.remove('transitioning');
+                }
+                this.isTransitioning = false;
+            }, 100); // Small delay to ensure page is visible before updating content
+            
+        }, 150); // Half of the transition duration for smoother overlap
     }
 
     updateUnlockStatus() {
@@ -71,47 +183,43 @@ export class UISystem {
         const heatRequired = 100;
         const fuelRequired = 50;
         
-        // Update navigation button state
+        // Update navigation button state with enhanced experience
         if (worldsNavBtn) {
             const hasEnoughResources = state.resources.heat >= heatRequired && state.resources.fuel >= fuelRequired;
             
-            if (state.unlocks.worldGenerator || hasEnoughResources) {
+            if (state.unlocks.worldGenerator) {
+                // Already unlocked - show normal state
                 worldsNavBtn.textContent = 'Worlds';
+                worldsNavBtn.disabled = false;
+                worldsNavBtn.classList.remove('locked', 'unlock-ready');
+            } else if (hasEnoughResources) {
+                // Can unlock - show exciting unlock prompt
+                worldsNavBtn.textContent = 'UNLOCK!!';
+                worldsNavBtn.disabled = false;
+                worldsNavBtn.classList.remove('locked');
+                worldsNavBtn.classList.add('unlock-ready');
             } else {
-                worldsNavBtn.textContent = `Worlds (${state.resources.heat}/${heatRequired} Heat, ${state.resources.fuel}/${fuelRequired} Fuel)`;
+                // Locked - show required materials mysteriously
+                worldsNavBtn.textContent = `${heatRequired} Heat + ${fuelRequired} Fuel`;
+                worldsNavBtn.disabled = true;
+                worldsNavBtn.classList.add('locked');
+                worldsNavBtn.classList.remove('unlock-ready');
             }
-            worldsNavBtn.disabled = false;
         }
         
-        // Update unlock button
+        // Update unlock button (keep existing logic but hide when nav button shows UNLOCK!!)
         if (unlockWorldsBtn) {
             const hasEnoughResources = state.resources.heat >= heatRequired && state.resources.fuel >= fuelRequired;
             
-            console.log('[UISystem] Unlock button debug:', {
-                heat: state.resources.heat,
-                fuel: state.resources.fuel,
-                heatRequired: heatRequired,
-                fuelRequired: fuelRequired,
-                hasEnoughHeat: state.resources.heat >= heatRequired,
-                hasEnoughFuel: state.resources.fuel >= fuelRequired,
-                hasEnoughResources: hasEnoughResources,
-                worldGeneratorUnlocked: state.unlocks.worldGenerator
-            });
-            
             if (hasEnoughResources && !state.unlocks.worldGenerator) {
-                console.log('[UISystem] ENABLING unlock button');
-                unlockWorldsBtn.style.display = 'block';
-                unlockWorldsBtn.disabled = false;
-                unlockWorldsBtn.textContent = `Unlock World Generator (${heatRequired} Heat + ${fuelRequired} Fuel)`;
-                unlockWorldsBtn.className = 'primary-btn';
+                // Hide unlock button when nav button shows UNLOCK!!
+                unlockWorldsBtn.style.display = 'none';
             } else if (!state.unlocks.worldGenerator) {
-                console.log('[UISystem] DISABLING unlock button - not enough resources');
                 unlockWorldsBtn.style.display = 'block';
                 unlockWorldsBtn.disabled = true;
                 unlockWorldsBtn.textContent = `Need ${heatRequired} Heat + ${fuelRequired} Fuel`;
                 unlockWorldsBtn.className = 'primary-btn disabled';
             } else {
-                console.log('[UISystem] HIDING unlock button - already unlocked');
                 unlockWorldsBtn.style.display = 'none';
             }
         }
@@ -190,14 +298,19 @@ export class UISystem {
         const unlockedAchievements = achievements.unlocked.length;
         const progressPercent = (unlockedAchievements / totalAchievements) * 100;
         
-      
-        
         const progressBar = document.getElementById('achievementsProgress');
         const completedSpan = document.getElementById('achievementsUnlocked');
         const totalSpan = document.getElementById('achievementsTotal');
         
-        
-        if (progressBar) progressBar.style.width = `${progressPercent}%`;
+        if (progressBar) {
+            progressBar.style.width = `${progressPercent}%`;
+            // Update aria attributes for screen readers
+            const progressContainer = progressBar.parentElement;
+            if (progressContainer) {
+                progressContainer.setAttribute('aria-valuenow', unlockedAchievements);
+                progressContainer.setAttribute('aria-valuemax', totalAchievements);
+            }
+        }
         if (completedSpan) completedSpan.textContent = unlockedAchievements;
         if (totalSpan) totalSpan.textContent = totalAchievements;
         
@@ -420,6 +533,11 @@ export class UISystem {
         // Update unlock status
         this.updateUnlockStatus();
         
+        // Update worlds page if we're on it
+        if (this.currentPage === 'worlds') {
+            this.updateWorldsPageUI();
+        }
+        
         // Update resources
         document.getElementById('heatAmount').textContent = Math.floor(state.resources.heat);
         document.getElementById('fuelAmount').textContent = Math.floor(state.resources.fuel);
@@ -466,13 +584,11 @@ export class UISystem {
         
         if (state.currentWorld) {
             const world = state.currentWorld;
-            const tierBadge = world.tier ? `<div class="world-tier-badge">Tier ${world.tier}</div>` : '';
             const specialEffectsDesc = world.specialEffects && world.specialEffects.description ? 
                 `<div class="world-special-effects">${world.specialEffects.description}</div>` : '';
             
             worldDisplay.innerHTML = `
                 <div class="world-info world-tier-${world.tier || 1}">
-                    ${tierBadge}
                     <div class="world-property">
                         <span class="property-name">Type:</span>
                         <span class="property-value">${world.type}</span>
@@ -839,38 +955,46 @@ export class UISystem {
     }
 
     showNotification(message) {
+        // Only show achievement notifications
+        if (!message.startsWith('Achievement Unlocked:')) {
+            return;
+        }
+        
+        // Announce to screen readers
+        this.announceToScreenReader(message);
+        
         // Create notification element
         const notification = document.createElement('div');
-        notification.className = 'game-notification';
+        notification.className = 'achievement-notification';
         notification.textContent = message;
         
-        // Style the notification
+        // Style the notification (grey boxy style to match game theme)
         notification.style.cssText = `
             position: fixed;
             top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, var(--highlight-color), var(--accent-color));
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            left: 20px;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            border: 1px solid #444444;
             z-index: 1000;
             font-weight: bold;
-            max-width: 300px;
-            transform: translateX(100%);
+            font-size: 0.85em;
+            max-width: 250px;
+            transform: translateX(-100%);
             transition: transform 0.3s ease;
         `;
         
         document.body.appendChild(notification);
         
-        // Animate in
+        // Animate in from left
         setTimeout(() => {
             notification.style.transform = 'translateX(0)';
         }, 100);
         
         // Animate out and remove
         setTimeout(() => {
-            notification.style.transform = 'translateX(100%)';
+            notification.style.transform = 'translateX(-100%)';
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
@@ -907,36 +1031,6 @@ export class UISystem {
                 element.style.color = '';
             }, 300);
         }
-    }
-
-    setupTabInterface() {
-        // Setup tab switching functionality with small delay to ensure DOM is ready
-        setTimeout(() => {
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            if (tabButtons.length === 0) {
-                console.warn('No tab buttons found');
-                return;
-            }
-            
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetTab = button.getAttribute('data-tab');
-                    
-                    // Remove active class from all buttons and contents
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
-                    
-                    // Add active class to clicked button and corresponding content
-                    button.classList.add('active');
-                    const targetContent = document.getElementById(targetTab + 'Tab');
-                    if (targetContent) {
-                        targetContent.classList.add('active');
-                    }
-                });
-            });
-        }, 100);
     }
     
     updateConversionVisuals() {
@@ -1072,17 +1166,12 @@ export class UISystem {
         
         // Unlock button
         const unlockWorldsBtn = document.getElementById('unlockWorldsBtn');
-        console.log('[UISystem] Found unlockWorldsBtn:', !!unlockWorldsBtn);
         if (unlockWorldsBtn) {
-            console.log('[UISystem] Adding click listener to unlockWorldsBtn');
             unlockWorldsBtn.addEventListener('click', (e) => {
-                console.log('[UISystem] Unlock button clicked!', e);
                 e.preventDefault();
                 e.stopPropagation();
                 callbacks.unlockWorldGenerator();
             });
-        } else {
-            console.log('[UISystem] unlockWorldsBtn element not found');
         }
         
         // Options page event listeners

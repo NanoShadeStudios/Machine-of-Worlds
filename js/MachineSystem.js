@@ -122,32 +122,265 @@ export class MachineSystem {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         const state = this.gameState.getState();
+        const worldCount = state.worldsCreated || 0;
         
-        if (!state || !state.machineParts || state.machineParts.length === 0) {
-            // Draw steampunk base frame when no parts exist
-            this.drawBaseFrame();
-            return;
+        // Draw background
+        this.drawEnhancedBackground();
+        
+        // Draw the main machine based on world count
+        this.drawMainMachine(worldCount);
+        
+        // Draw expansion rings based on worlds created
+        this.drawExpansionRings(worldCount);
+        
+        // Draw resource cores
+        this.drawResourceCores(state);
+        
+        // Draw connecting energy lines
+        this.drawEnergyLines(worldCount);
+        
+        // Draw machine housing/frame
+        this.drawMachineHousing(worldCount);
+        
+        // Draw central title overlay
+        this.drawMachineTitle(worldCount);
+    }
+
+    drawEnhancedBackground() {
+        // Create a subtle radial gradient background
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const gradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(this.canvas.width, this.canvas.height) / 2);
+        gradient.addColorStop(0, 'rgba(25, 30, 35, 0.8)');
+        gradient.addColorStop(1, 'rgba(15, 20, 25, 0.95)');
+        
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Add some subtle grid lines
+        this.ctx.strokeStyle = 'rgba(184, 134, 11, 0.1)';
+        this.ctx.lineWidth = 1;
+        const gridSize = 40;
+        
+        for (let x = 0; x <= this.canvas.width; x += gridSize) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.stroke();
         }
         
-        // Draw background grid
-        this.drawBackgroundGrid();
+        for (let y = 0; y <= this.canvas.height; y += gridSize) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.stroke();
+        }
+    }
+
+    drawMainMachine(worldCount) {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
         
-        // Draw connecting pipes first (so they appear behind components)
-        this.drawSteampunkConnections();
+        // Base size grows with world count
+        const baseSize = 60 + (worldCount * 8);
         
-        // Draw steam effects
-        this.drawSteamEffects();
+        // Main reactor core
+        const coreGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, baseSize);
+        coreGradient.addColorStop(0, '#FFD700'); // Bright gold center
+        coreGradient.addColorStop(0.3, '#FF8C00'); // Orange
+        coreGradient.addColorStop(0.7, '#B8860B'); // Dark gold
+        coreGradient.addColorStop(1, '#8B4513'); // Bronze edge
         
-        // Draw machine parts
-        state.machineParts.forEach((part, index) => {
-            this.drawMachinePart(part, index);
-        });
+        this.ctx.fillStyle = coreGradient;
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, baseSize, 0, Math.PI * 2);
+        this.ctx.fill();
         
-        // Draw machine frame/housing
-        this.drawMachineFrame();
+        // Core outline
+        this.ctx.strokeStyle = '#654321';
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
         
-        // Draw complexity indicator
-        this.drawComplexityIndicator();
+        // Inner details
+        for (let i = 0; i < 3; i++) {
+            this.ctx.strokeStyle = `rgba(255, 215, 0, ${0.3 - i * 0.1})`;
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, baseSize - (i * 15), 0, Math.PI * 2);
+            this.ctx.stroke();
+        }
+    }
+
+    drawExpansionRings(worldCount) {
+        if (worldCount < 2) return;
+        
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const baseRadius = 80;
+        
+        // Number of rings based on world count
+        const rings = Math.min(Math.floor(worldCount / 2), 6);
+        
+        for (let ring = 0; ring < rings; ring++) {
+            const radius = baseRadius + (ring * 45);
+            const segments = 4 + ring; // More segments on outer rings
+            
+            for (let i = 0; i < segments; i++) {
+                const angle = (i / segments) * Math.PI * 2 + (ring * 0.5); // Offset each ring
+                const segmentSize = 15 + (ring * 3);
+                
+                const x = centerX + Math.cos(angle) * radius - segmentSize/2;
+                const y = centerY + Math.sin(angle) * radius - segmentSize/2;
+                
+                // Module gradient
+                const moduleGradient = this.ctx.createRadialGradient(x + segmentSize/2, y + segmentSize/2, 0, x + segmentSize/2, y + segmentSize/2, segmentSize);
+                moduleGradient.addColorStop(0, '#C0C0C0'); // Silver center
+                moduleGradient.addColorStop(0.5, '#808080'); // Gray
+                moduleGradient.addColorStop(1, '#404040'); // Dark edge
+                
+                this.ctx.fillStyle = moduleGradient;
+                this.ctx.fillRect(x, y, segmentSize, segmentSize);
+                
+                // Module outline
+                this.ctx.strokeStyle = '#2F2F2F';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(x, y, segmentSize, segmentSize);
+                
+                // Inner detail
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.fillRect(x + 3, y + 3, segmentSize - 6, segmentSize - 6);
+            }
+        }
+    }
+
+    drawResourceCores(state) {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const resources = state.resources || {};
+        
+        // Heat core (top)
+        if (resources.heat > 0) {
+            this.drawResourceCore(centerX, centerY - 100, 20, '#FF4500', resources.heat);
+        }
+        
+        // Fuel core (bottom)
+        if (resources.fuel > 0) {
+            this.drawResourceCore(centerX, centerY + 100, 20, '#0066FF', resources.fuel);
+        }
+        
+        // Additional cores for other resources if they exist
+        if (resources.pressure > 0) {
+            this.drawResourceCore(centerX - 100, centerY, 18, '#FFFF00', resources.pressure);
+        }
+        
+        if (resources.energy > 0) {
+            this.drawResourceCore(centerX + 100, centerY, 18, '#9900FF', resources.energy);
+        }
+        
+        if (resources.stability > 0) {
+            this.drawResourceCore(centerX, centerY - 150, 16, '#00FF00', resources.stability);
+        }
+    }
+
+    drawResourceCore(x, y, radius, color, amount) {
+        // Pulsing effect based on resource amount - ensure radius is always positive
+        const pulseIntensity = Math.sin(Date.now() * 0.005) * (amount * 0.02);
+        const pulseSize = Math.max(radius * 0.3, radius + pulseIntensity); // Minimum 30% of original radius
+        
+        // Ensure gradient radius is always positive for createRadialGradient
+        const gradientRadius = Math.max(1, pulseSize);
+        const coreGradient = this.ctx.createRadialGradient(x, y, 0, x, y, gradientRadius);
+        coreGradient.addColorStop(0, color);
+        coreGradient.addColorStop(0.5, `${color}80`); // Semi-transparent
+        coreGradient.addColorStop(1, `${color}20`); // Very transparent
+        
+        this.ctx.fillStyle = coreGradient;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, Math.max(1, pulseSize), 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Core outline
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+        this.ctx.stroke();
+    }
+
+    drawEnergyLines(worldCount) {
+        if (worldCount < 1) return;
+        
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        // Animated energy lines connecting cores
+        const time = Date.now() * 0.003;
+        this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.lineDashOffset = -time * 10;
+        
+        // Lines to resource cores
+        this.ctx.beginPath();
+        this.ctx.moveTo(centerX, centerY);
+        this.ctx.lineTo(centerX, centerY - 100); // To heat core
+        this.ctx.moveTo(centerX, centerY);
+        this.ctx.lineTo(centerX, centerY + 100); // To fuel core
+        
+        if (worldCount > 2) {
+            this.ctx.moveTo(centerX, centerY);
+            this.ctx.lineTo(centerX - 100, centerY); // To pressure core
+            this.ctx.moveTo(centerX, centerY);
+            this.ctx.lineTo(centerX + 100, centerY); // To energy core
+        }
+        
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+    }
+
+    drawMachineHousing(worldCount) {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        // Outer housing that grows with worlds
+        const housingSize = 200 + (worldCount * 15);
+        
+        // Housing gradient
+        const housingGradient = this.ctx.createLinearGradient(centerX - housingSize/2, centerY - housingSize/2, centerX + housingSize/2, centerY + housingSize/2);
+        housingGradient.addColorStop(0, 'rgba(139, 69, 19, 0.3)'); // Transparent brown
+        housingGradient.addColorStop(0.5, 'rgba(160, 82, 45, 0.2)'); // Transparent saddle brown
+        housingGradient.addColorStop(1, 'rgba(139, 69, 19, 0.3)');
+        
+        this.ctx.fillStyle = housingGradient;
+        this.ctx.fillRect(centerX - housingSize/2, centerY - housingSize/2, housingSize, housingSize);
+        
+        // Housing outline
+        this.ctx.strokeStyle = '#8B4513';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(centerX - housingSize/2, centerY - housingSize/2, housingSize, housingSize);
+    }
+
+    drawMachineTitle(worldCount) {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2 - 30;
+        
+        // Machine title
+        this.ctx.fillStyle = '#FFD700';
+        this.ctx.font = 'bold 24px serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('⚙ MACHINE ASSEMBLY PLATFORM ⚙', centerX, centerY - 50);
+        
+        // Subtitle
+        this.ctx.fillStyle = '#B8860B';
+        this.ctx.font = '16px serif';
+        this.ctx.fillText('Create worlds to build your steampunk machine', centerX, centerY - 25);
+        
+        // Machine level indicator
+        if (worldCount > 0) {
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.font = 'bold 14px serif';
+            this.ctx.fillText(`Machine Level: ${worldCount}`, centerX, centerY + 80);
+        }
     }
 
     drawBackgroundGrid() {
@@ -697,47 +930,14 @@ export class MachineSystem {
     }
 
     animateResource(type) {
-        // Add a burst effect for resource generation
-        if (this.canvas && this.ctx) {
-            const centerX = this.canvas.width / 2;
-            const centerY = this.canvas.height / 2;
-            
-            // Create temporary animation particles
-            for (let i = 0; i < 5; i++) {
-                setTimeout(() => {
-                    const particle = {
-                        x: centerX + (Math.random() - 0.5) * 100,
-                        y: centerY + (Math.random() - 0.5) * 100,
-                        vx: (Math.random() - 0.5) * 4,
-                        vy: (Math.random() - 0.5) * 4,
-                        life: 1,
-                        color: this.getMachinePartColor(type)
-                    };
-                    
-                    this.animateParticle(particle);
-                }, i * 50);
-            }
-        }
+        // Visual feedback removed - no more blue dots/particles
+        // Machine growth and visual improvements are handled in renderMachine()
+        return;
     }
 
     animateParticle(particle) {
-        const animate = () => {
-            if (particle.life <= 0) return;
-            
-            particle.x += particle.vx;
-            particle.y += particle.vy;
-            particle.life -= 0.02;
-            
-            this.ctx.globalAlpha = particle.life;
-            this.ctx.fillStyle = particle.color;
-            this.ctx.beginPath();
-            this.ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
-            this.ctx.fill();
-            this.ctx.globalAlpha = 1;
-            
-            requestAnimationFrame(animate);
-        };
-        animate();
+        // Particle animation disabled to remove unwanted blue effects
+        return;
     }
 
     setCanvas(canvas, ctx) {
@@ -757,41 +957,9 @@ export class MachineSystem {
     }
 
     drawBaseFrame() {
-        const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
-        
-        // Base platform with brass gradient
-        const gradient = this.ctx.createLinearGradient(centerX - 120, centerY + 40, centerX + 120, centerY + 80);
-        gradient.addColorStop(0, '#4C4C4C');
-        gradient.addColorStop(0.5, '#B8860B');
-        gradient.addColorStop(1, '#4C4C4C');
-        
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(centerX - 120, centerY + 40, 240, 40);
-        
-        // Base frame
-        this.ctx.strokeStyle = '#4C4C4C';
-        this.ctx.lineWidth = 4;
-        this.ctx.strokeRect(centerX - 120, centerY + 40, 240, 40);
-        
-        // Support pillars
-        for (let i = 0; i < 4; i++) {
-            const pillarX = centerX - 90 + (i * 60);
-            this.ctx.fillStyle = '#B87333';
-            this.ctx.fillRect(pillarX - 6, centerY - 20, 12, 60);
-            this.ctx.strokeStyle = '#4C4C4C';
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(pillarX - 6, centerY - 20, 12, 60);
-        }
-        
-        // Center text with steampunk styling
-        this.ctx.fillStyle = '#B8860B';
-        this.ctx.font = 'bold 20px serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('⚙ MACHINE ASSEMBLY PLATFORM ⚙', centerX, centerY - 5);
-        this.ctx.font = '16px serif';
-        this.ctx.fillStyle = '#CD7F32';
-        this.ctx.fillText('Create worlds to build your steampunk machine', centerX, centerY + 15);
+        // This method is now integrated into the main renderMachine method
+        // The new system always shows the machine, even with 0 worlds
+        this.renderMachine();
     }
 
     drawSteampunkConnections() {

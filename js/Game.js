@@ -9,58 +9,174 @@ import { MachineSystem } from './MachineSystem.js';
 import { UISystem } from './UISystem.js';
 import { AchievementSystem } from './AchievementSystem.js';
 
+class LoadingManager {
+    constructor() {
+        this.loadingScreen = document.getElementById('loadingScreen');
+        this.loadingText = document.getElementById('loadingText');
+        this.loadingBarFill = document.getElementById('loadingBarFill');
+        this.loadingPercentage = document.getElementById('loadingPercentage');
+        this.loadingDetails = document.getElementById('loadingDetails');
+        this.currentProgress = 0;
+        this.isVisible = true;
+    }
+
+    updateProgress(progress, message, details = '') {
+        this.currentProgress = Math.min(100, Math.max(0, progress));
+        
+        if (this.loadingText) {
+            this.loadingText.textContent = message;
+        }
+        
+        if (this.loadingBarFill) {
+            this.loadingBarFill.style.width = `${this.currentProgress}%`;
+        }
+        
+        if (this.loadingPercentage) {
+            this.loadingPercentage.textContent = `${Math.round(this.currentProgress)}%`;
+        }
+        
+        if (this.loadingDetails && details) {
+            this.loadingDetails.textContent = details;
+        }
+    }
+
+    async hide() {
+        if (!this.isVisible) return;
+        
+        this.updateProgress(100, 'Game ready!', 'Welcome to The Machine of Worlds');
+        
+        // Show the game container
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) {
+            gameContainer.classList.add('loaded');
+        }
+        
+        // Wait a moment to show completion
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (this.loadingScreen) {
+            this.loadingScreen.classList.add('hidden');
+            this.isVisible = false;
+            
+            // Remove from DOM after transition
+            setTimeout(() => {
+                if (this.loadingScreen && this.loadingScreen.parentNode) {
+                    this.loadingScreen.parentNode.removeChild(this.loadingScreen);
+                }
+            }, 500);
+        }
+    }
+
+    show() {
+        if (this.loadingScreen) {
+            this.loadingScreen.classList.remove('hidden');
+            this.isVisible = true;
+        }
+    }
+}
+
 export class Game {
     constructor() {
+        // Initialize loading manager first
+        this.loadingManager = new LoadingManager();
+        this.loadingManager.updateProgress(10, 'Initializing game systems...', 'Setting up core components');
+        
         // Initialize systems
         this.gameState = new GameState();
+        this.loadingManager.updateProgress(20, 'Loading game state...', 'Preparing world data');
+        
         this.worldSystem = new WorldSystem(this.gameState);
-        this.resourceSystem = new ResourceSystem(this.gameState);
-        this.eventSystem = new EventSystem(this.gameState);
-        this.upgradeSystem = new UpgradeSystem(this.gameState);
+        this.loadingManager.updateProgress(30, 'Initializing world system...', 'Creating dimensional framework');
+        
         this.achievementSystem = new AchievementSystem(this.gameState);
+        this.loadingManager.updateProgress(40, 'Setting up achievements...', 'Preparing progress tracking');
+        
+        this.resourceSystem = new ResourceSystem(this.gameState, this.achievementSystem);
+        this.loadingManager.updateProgress(50, 'Loading resource system...', 'Configuring generation mechanics');
+        
+        this.eventSystem = new EventSystem(this.gameState);
+        this.loadingManager.updateProgress(60, 'Preparing events...', 'Loading world interactions');
+        
+        this.upgradeSystem = new UpgradeSystem(this.gameState);
+        this.loadingManager.updateProgress(70, 'Initializing upgrades...', 'Preparing enhancement systems');
+        
         this.uiSystem = new UISystem(this.gameState);
+        this.loadingManager.updateProgress(80, 'Setting up interface...', 'Preparing user experience');
         
         // Initialize canvas and machine system
         this.canvas = null;
         this.ctx = null;
         this.machineSystem = null;
         
-        this.init();
+        // Start async initialization
+        this.initAsync();
     }
 
-    init() {
-        this.setupCanvas();
-        this.machineSystem = new MachineSystem(this.gameState, this.canvas, this.ctx);
-        this.loadGame(); // Try to load saved game first
-        
-        // Initialize achievement tracking
-        this.achievementSystem.initializeAchievementTracking(this.gameState.getState());
-        
-        console.log('[Game] About to call bindEvents');
-        this.bindEvents();
-        console.log('[Game] bindEvents completed');
-        
-        // Setup UI with a small delay to ensure DOM is ready
-        setTimeout(() => {
+    async initAsync() {
+        try {
+            this.loadingManager.updateProgress(85, 'Preparing visuals...', 'Setting up machine canvas');
+            
+            // Small delay to ensure DOM is ready
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            this.setupCanvas();
+            this.machineSystem = new MachineSystem(this.gameState, this.canvas, this.ctx);
+            
+            this.loadingManager.updateProgress(90, 'Loading saved data...', 'Restoring your progress');
+            this.loadGame(); // Try to load saved game first
+            
+            // Initialize auto-save after loading game settings
+            const state = this.gameState.getState();
+            const autoSaveInterval = state.settings.autoSaveInterval || 30;
+            this.setupAutoSave(autoSaveInterval);
+            
+            // Initialize achievement tracking
+            this.achievementSystem.initializeAchievementTracking(this.gameState.getState());
+            
+            this.loadingManager.updateProgress(95, 'Finalizing setup...', 'Connecting game systems');
+            
+            this.bindEvents();
+            
+            // Setup UI with loading feedback
+            this.loadingManager.updateProgress(98, 'Preparing interface...', 'Final touches');
+            
+            await new Promise(resolve => setTimeout(resolve, 200)); // Small delay for smooth UX
+            
             this.uiSystem.setupResourceDescriptions();
-            this.uiSystem.setupTabInterface();
             this.uiSystem.setupPageNavigation();
             this.uiSystem.setEventChoiceCallback((event, choice) => this.selectEventChoice(event, choice));
+            this.uiSystem.setMainPageReturnCallback(() => {
+                this.updateUI();
+                this.renderMachine();
+            });
+            this.uiSystem.setUnlockWorldsCallback(() => this.unlockWorldGenerator());
             this.updateUI();
             this.renderMachine();
-        }, 100);
-        
-        // Setup regular updates for playtime, achievements, and passive income
-        setInterval(() => {
-            this.achievementSystem.updatePlaytime();
-            this.checkAndNotifyAchievements();
             
-            // Generate passive income from worlds
-            this.resourceSystem.generatePassiveIncome();
-            this.updateUI();
-        }, 1000); // Check every second for passive income
-        
-        console.log('The Machine of Worlds initialized successfully!');
+            // Hide loading screen
+            await this.loadingManager.hide();
+            
+            // Setup regular updates for playtime and achievements
+            setInterval(() => {
+                this.achievementSystem.updatePlaytime();
+                this.checkAndNotifyAchievements();
+                
+                // Update UI (no more passive income generation)
+                this.updateUI();
+            }, 1000); // Check every second for playtime and achievements only
+            
+        } catch (error) {
+            console.error('Error during game initialization:', error);
+            this.loadingManager.updateProgress(100, 'Error occurred', 'Attempting to continue...');
+            
+            // Try to continue anyway after a brief delay
+            setTimeout(async () => {
+                await this.loadingManager.hide();
+                // Minimal fallback initialization
+                this.updateUI();
+                this.renderMachine();
+            }, 1000);
+        }
     }
 
     setupCanvas() {
@@ -94,24 +210,14 @@ export class Game {
     }
 
     createWorld() {
-        console.log('[Game] createWorld called');
         const state = this.gameState.getState();
         
         // Calculate exponential world cost
         const baseMultiplier = Math.floor(state.worldsCreated / 5);
         const exponentialCost = Math.floor(10 * Math.pow(2, baseMultiplier) * (1 + (state.worldsCreated % 5) * 0.4));
         
-        console.log('[Game] World creation cost:', {
-            worldsCreated: state.worldsCreated,
-            baseMultiplier,
-            exponentialCost,
-            playerHeat: state.resources.heat,
-            playerFuel: state.resources.fuel
-        });
-        
         // Check if player can afford the world
         if (state.resources.heat < exponentialCost || state.resources.fuel < exponentialCost) {
-            console.log('[Game] Not enough resources for world creation');
             this.uiSystem.showNotification('Not enough resources to create a world!');
             return;
         }
@@ -125,6 +231,11 @@ export class Game {
         const world = this.worldSystem.generateRandomWorld();
         state.currentWorld = world;
         state.worldsCreated++;
+        
+        // Track tier-specific world creation for achievements
+        if (this.achievementSystem && world.tier) {
+            this.achievementSystem.trackTierWorldCreation(world.tier);
+        }
         
         // Add world to history
         if (!state.worldHistory) {
@@ -171,6 +282,9 @@ export class Game {
         
         this.updateUI();
         this.renderMachine();
+        
+        // Auto-save after world creation
+        this.saveGame();
         
         // Visual feedback
         this.uiSystem.showResourceGain();
@@ -320,14 +434,14 @@ export class Game {
         if (reset) {
             // Update all systems with reset state
             const state = this.gameState.getState();
-            this.worldSystem.gameState = state;
-            this.resourceSystem.gameState = state;
-            this.eventSystem.gameState = state;
-            this.upgradeSystem.gameState = state;
+            this.worldSystem.gameState = this.gameState;
+            this.resourceSystem.gameState = this.gameState;
+            this.eventSystem.gameState = this.gameState;
+            this.upgradeSystem.gameState = this.gameState;
             this.uiSystem.gameState = this.gameState; // Pass the gameState object, not the state
             
             if (this.machineSystem) {
-                this.machineSystem.gameState = state;
+                this.machineSystem.gameState = this.gameState;
                 this.machineSystem.clearMachine();
             }
             
@@ -449,42 +563,96 @@ export class Game {
             try {
                 const importedData = JSON.parse(e.target.result);
                 
-                // Basic validation
-                if (importedData && importedData.resources && importedData.worldsCreated !== undefined) {
+                // Use the comprehensive validation from GameState
+                if (!this.gameState.validateSaveData(importedData)) {
+                    throw new Error('Save file validation failed');
+                }
+                
+                // Store current state as backup in case import fails
+                const backupState = JSON.parse(JSON.stringify(this.gameState.state));
+                
+                try {
+                    // Apply imported data using the same logic as loadGame
                     this.gameState.state = {
                         ...this.gameState.state,
                         ...importedData,
-                        // Ensure new properties exist
-                        unlocks: { ...this.gameState.state.unlocks, ...importedData.unlocks },
-                        achievements: { ...this.gameState.state.achievements, ...importedData.achievements },
-                        settings: { ...this.gameState.state.settings, ...importedData.settings }
+                        // Ensure upgrades structure is properly merged
+                        upgrades: {
+                            ...this.gameState.state.upgrades,
+                            ...importedData.upgrades
+                        },
+                        // Ensure resources structure is properly merged
+                        resources: {
+                            ...this.gameState.state.resources,
+                            ...importedData.resources
+                        },
+                        // Ensure currentWorld is preserved
+                        currentWorld: importedData.currentWorld || this.gameState.state.currentWorld,
+                        // Ensure new properties exist even in old saves
+                        permanentBonuses: {
+                            ...this.gameState.state.permanentBonuses,
+                            ...importedData.permanentBonuses
+                        },
+                        worldTiers: {
+                            ...this.gameState.state.worldTiers,
+                            ...importedData.worldTiers
+                        },
+                        unlocks: {
+                            ...this.gameState.state.unlocks,
+                            ...importedData.unlocks
+                        },
+                        achievements: {
+                            ...this.gameState.state.achievements,
+                            ...importedData.achievements
+                        },
+                        settings: {
+                            ...this.gameState.state.settings,
+                            ...importedData.settings
+                        },
+                        // Ensure worldHistory exists (for compatibility with old saves)
+                        worldHistory: importedData.worldHistory || []
                     };
                     
+                    // Validate and fix the imported state
+                    this.gameState.validateAndFixState();
+                    
+                    // Update all systems and UI
                     this.updateAllSystems();
                     this.updateUI();
                     this.renderMachine();
+                    
+                    // Save the imported data to localStorage
+                    this.gameState.saveGame();
+                    
                     this.uiSystem.showNotification('Save data imported successfully!');
-                } else {
-                    throw new Error('Invalid save file format');
+                    
+                    // Clear the file input for future imports
+                    fileInput.value = '';
+                    
+                } catch (applyError) {
+                    // Restore backup state if import application fails
+                    this.gameState.state = backupState;
+                    throw applyError;
                 }
+                
             } catch (error) {
                 console.error('Import error:', error);
-                this.uiSystem.showNotification('Error importing save data: Invalid file format');
+                this.uiSystem.showNotification('Error importing save data: ' + error.message);
             }
         };
         reader.readAsText(file);
     }
 
     updateAllSystems() {
-        const state = this.gameState.getState();
-        this.worldSystem.gameState = state;
-        this.resourceSystem.gameState = state;
-        this.eventSystem.gameState = state;
-        this.upgradeSystem.gameState = state;
-        this.uiSystem.gameState = this.gameState; // Pass the gameState object, not the state
+        // All systems expect the GameState object (with getState() method)
+        this.worldSystem.gameState = this.gameState;
+        this.resourceSystem.gameState = this.gameState;
+        this.eventSystem.gameState = this.gameState;
+        this.upgradeSystem.gameState = this.gameState;
+        this.uiSystem.gameState = this.gameState;
         
         if (this.machineSystem) {
-            this.machineSystem.gameState = state;
+            this.machineSystem.gameState = this.gameState;
         }
     }
 

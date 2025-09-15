@@ -75,13 +75,13 @@ export class GameState {
                     18: { name: "Mega Heat", description: "Reach 10,000 Heat", reward: "+30% Heat generation", requirement: { type: "resource", resource: "heat", amount: 10000 } },
                     19: { name: "Fuel Empire", description: "Reach 5,000 Fuel", reward: "+25% Fuel generation", requirement: { type: "resource", resource: "fuel", amount: 5000 } },
                     20: { name: "Upgrade Master", description: "Purchase 10 upgrades", reward: "+10% upgrade efficiency", requirement: { type: "upgrade", count: 10 } },
-                    21: { name: "World Factory", description: "Create 50 worlds", reward: "Unlock Tier 3 worlds", requirement: { type: "worlds", amount: 50 } },
+                    21: { name: "World Factory", description: "Create 25 worlds", reward: "Unlock Tier 3 worlds", requirement: { type: "worlds", amount: 25 } },
                     22: { name: "Stability Fortress", description: "Reach 100 Stability", reward: "+30% Stability generation", requirement: { type: "resource", resource: "stability", amount: 100 } },
                     23: { name: "Synergy Master", description: "Activate synergies 100 times", reward: "+25% synergy effectiveness", requirement: { type: "synergy", count: 100 } },
                     24: { name: "Heat Titan", description: "Reach 100,000 Heat", reward: "+50% Heat generation", requirement: { type: "resource", resource: "heat", amount: 100000 } },
                     25: { name: "Fuel Ocean", description: "Reach 50,000 Fuel", reward: "+40% Fuel generation", requirement: { type: "resource", resource: "fuel", amount: 50000 } },
                     26: { name: "Upgrade Legend", description: "Max out all basic upgrades", reward: "Unlock legendary upgrades", requirement: { type: "upgrade", maxed: ["heatGenerator", "fuelEfficiency"] } },
-                    27: { name: "Universe Builder", description: "Create 100 worlds", reward: "Unlock universe mode", requirement: { type: "worlds", amount: 100 } },
+                    27: { name: "Universe Builder", description: "Create 75 worlds", reward: "Unlock universe mode", requirement: { type: "worlds", amount: 75 } },
                     28: { name: "Pressure God", description: "Convert 1000 Pressure to Heat", reward: "+50% Pressure conversion", requirement: { type: "conversion", type: "pressure_to_heat", amount: 1000 } },
                     29: { name: "Energy Nexus", description: "Reach 1000 Energy", reward: "+40% Energy generation", requirement: { type: "resource", resource: "energy", amount: 1000 } },
                     30: { name: "Perfect Balance", description: "Have all resources above 1000", reward: "+25% all generation", requirement: { type: "balance", resources: ["heat", "fuel", "pressure", "energy", "stability"], amount: 1000 } },
@@ -95,16 +95,48 @@ export class GameState {
                     38: { name: "Click Master", description: "Generate resources 1000 times", reward: "+25% manual generation", requirement: { type: "clicks", amount: 1000 } },
                     39: { name: "Reset Veteran", description: "Reset your game 3 times", reward: "+100% reset bonuses", requirement: { type: "resets", amount: 3 } },
                     40: { name: "Achievement Hunter", description: "Unlock 25 achievements", reward: "+50% achievement bonuses", requirement: { type: "achievements", amount: 25 } },
-                    41: { name: "Mega Worlds", description: "Create 500 worlds", reward: "Unlock mega worlds", requirement: { type: "worlds", amount: 500 } },
+                    41: { name: "Mega Worlds", description: "Create 150 worlds", reward: "Unlock mega worlds", requirement: { type: "worlds", amount: 150 } },
                     42: { name: "Heat Infinity", description: "Reach 1M Heat", reward: "+100% Heat generation", requirement: { type: "resource", resource: "heat", amount: 1000000 } },
                     43: { name: "Fuel Cosmos", description: "Reach 1M Fuel", reward: "+100% Fuel generation", requirement: { type: "resource", resource: "fuel", amount: 1000000 } },
-                    44: { name: "Ultimate Builder", description: "Create 1000 worlds", reward: "Unlock ultimate mode", requirement: { type: "worlds", amount: 1000 } },
+                    44: { name: "Ultimate Builder", description: "Create 250 worlds", reward: "Unlock ultimate mode", requirement: { type: "worlds", amount: 250 } },
                     45: { name: "Perfect Synergy", description: "Have all synergies active", reward: "+100% synergy power", requirement: { type: "synergy", all: true } },
                     46: { name: "Resource God", description: "Have all resources above 100K", reward: "+75% all generation", requirement: { type: "balance", resources: ["heat", "fuel", "pressure", "energy", "stability"], amount: 100000 } },
                     47: { name: "Legendary Status", description: "Reach maximum level in everything", reward: "Unlock prestige mode", requirement: { type: "completion", percentage: 100 } },
                     48: { name: "Secret Keeper", description: "???", reward: "???", requirement: { type: "secret", code: "WORLD_MACHINE" }, hidden: true },
                     49: { name: "Time Lord", description: "Play for 7 days total", reward: "+200% time bonuses", requirement: { type: "playtime", amount: 604800 } },
-                    50: { name: "Master of Worlds", description: "Complete all other achievements", reward: "Master title + 1000% all bonuses", requirement: { type: "completion", achievements: 49 } }
+                    50: { name: "Master of Worlds", description: "Complete all other achievements", reward: "Master title + 1000% all bonuses", requirement: { type: "completion", achievements: 69 } },
+                    
+                    // New Achievement Variety - Conversion & Efficiency
+                    51: { name: "Conversion Expert", description: "Convert 500 Pressure to Heat", reward: "Unlock auto-conversion", requirement: { type: "conversion", from: "pressure", to: "heat", amount: 500 } },
+                    52: { name: "Energy Converter", description: "Convert 200 Energy to Fuel", reward: "+50% conversion efficiency", requirement: { type: "conversion", from: "energy", to: "fuel", amount: 200 } },
+                    53: { name: "Efficiency Master", description: "Reach 3:1 Heat to Fuel ratio", reward: "Unlock ratio bonuses", requirement: { type: "ratio", resources: ["heat", "fuel"], ratio: [3, 1] } },
+                    54: { name: "Resource Optimizer", description: "Maintain 2:1:1 Heat:Fuel:Pressure for 5 minutes", reward: "+25% balanced generation", requirement: { type: "maintain", resources: ["heat", "fuel", "pressure"], ratio: [2, 1, 1], duration: 300 } },
+                    
+                    // Streak & Consistency Achievements
+                    55: { name: "Daily Dedication", description: "Play for 7 consecutive days", reward: "Unlock daily bonuses", requirement: { type: "streak", category: "daily", count: 7 } },
+                    56: { name: "Resource Streak", description: "Generate resources for 100 consecutive game updates", reward: "+30% continuous generation", requirement: { type: "streak", category: "generation", count: 100 } },
+                    57: { name: "Upgrade Spree", description: "Purchase 5 upgrades within 60 seconds", reward: "Unlock bulk purchasing", requirement: { type: "speed", category: "upgrades", count: 5, time: 60 } },
+                    
+                    // Discovery & Strategy Achievements
+                    58: { name: "Explorer", description: "Discover all resource generation methods", reward: "Resource generation overview", requirement: { type: "discovery", category: "generation", count: 5 } },
+                    59: { name: "Strategist", description: "Reach 1000 Heat using only manual generation", reward: "Manual generation x2", requirement: { type: "challenge", method: "manual", resource: "heat", amount: 1000 } },
+                    60: { name: "Multi-tasker", description: "Have 5+ resources generating simultaneously", reward: "+20% parallel efficiency", requirement: { type: "simultaneous", category: "generation", count: 5 } },
+                    
+                    // Quality of Life Rewards
+                    61: { name: "Storage Expert", description: "Reach resource caps 10 times", reward: "+50% all resource caps", requirement: { type: "caps", category: "reached", count: 10 } },
+                    62: { name: "Automation Lover", description: "Use auto-features for 1 hour total", reward: "Unlock advanced automation", requirement: { type: "usage", category: "automation", duration: 3600 } },
+                    63: { name: "Interface Master", description: "Visit all game pages 20+ times each", reward: "Unlock quick navigation", requirement: { type: "navigation", category: "all_pages", count: 20 } },
+                    
+                    // Challenge & Constraint Achievements
+                    64: { name: "Minimalist", description: "Create 10 worlds with only 2 upgrade types", reward: "Upgrade efficiency +100%", requirement: { type: "constraint", category: "upgrades", max: 2, goal: { type: "worlds", amount: 10 } } },
+                    65: { name: "Speed Builder", description: "Create 5 worlds in under 10 minutes", reward: "World creation speed +200%", requirement: { type: "speed", category: "worlds", count: 5, time: 600 } },
+                    
+                    // Tier-Specific Progression Achievements
+                    66: { name: "Enhanced Explorer", description: "Create your first Enhanced World (Tier 2)", reward: "+15% Tier 2 world bonuses", requirement: { type: "tier", tier: 2, worldsCreated: 1 } },
+                    67: { name: "Enhanced Master", description: "Create 10 Enhanced Worlds", reward: "+25% Tier 2 world generation", requirement: { type: "tier", tier: 2, worldsCreated: 10 } },
+                    68: { name: "Exotic Pioneer", description: "Create your first Exotic World (Tier 3)", reward: "+20% Tier 3 world bonuses", requirement: { type: "tier", tier: 3, worldsCreated: 1 } },
+                    69: { name: "Reality Bender", description: "Create 5 Exotic Worlds", reward: "Unlock reality manipulation", requirement: { type: "tier", tier: 3, worldsCreated: 5 } },
+                    70: { name: "Tier Master", description: "Create worlds from all tiers", reward: "+50% cross-tier synergy", requirement: { type: "tierVariety", tiers: [1, 2, 3], minEach: 3 } }
                 }
             },
             // Settings System
@@ -113,7 +145,7 @@ export class GameState {
                 showResourceDescriptions: true,
                 animateProgressBars: true,
                 showDetailedTooltips: true,
-                autoSaveInterval: 60,
+                autoSaveInterval: 30, // Save every 30 seconds
                 showEfficiencyNumbers: true,
                 confirmDangerousActions: true,
                 showTutorialMessages: true,
@@ -131,13 +163,204 @@ export class GameState {
         return this.state;
     }
 
+    // Method to safely add resources and trigger save
+    addResources(resourceDeltas, shouldSave = false) {
+        for (const [resource, amount] of Object.entries(resourceDeltas)) {
+            if (this.state.resources.hasOwnProperty(resource)) {
+                this.state.resources[resource] += amount;
+            }
+        }
+        
+        // Apply resource caps after adding
+        this.enforceResourceCaps();
+        
+        // Optionally trigger save for important resource changes
+        if (shouldSave) {
+            this.saveGame();
+        }
+    }
+
+    // Apply resource caps to ensure resources don't exceed limits
+    enforceResourceCaps() {
+        const world = this.state.currentWorld;
+        
+        // Default caps
+        let caps = {
+            heat: Infinity,        // Heat has no cap
+            fuel: Infinity,        // Fuel has no cap
+            pressure: 100,         // Pressure cap
+            energy: 200,           // Energy cap
+            stability: 50          // Stability cap
+        };
+        
+        // Check for Infinite world special effects
+        if (world && world.specialEffects && world.specialEffects.effects && 
+            world.specialEffects.effects.special === 'noResourceLimits') {
+            caps.pressure = 200;   // Double pressure cap for Infinite worlds
+            caps.energy = 400;     // Double energy cap for Infinite worlds
+            caps.stability = 100;  // Double stability cap for Infinite worlds
+        }
+        
+        // Apply caps to all limited resources
+        let capsApplied = false;
+        for (const [resource, cap] of Object.entries(caps)) {
+            if (cap !== Infinity && this.state.resources[resource] > cap) {
+                this.state.resources[resource] = cap;
+                capsApplied = true;
+            }
+            
+            // Also ensure no negative values
+            if (this.state.resources[resource] < 0) {
+                this.state.resources[resource] = 0;
+                capsApplied = true;
+            }
+        }
+        
+        return capsApplied;
+    }
+
     updateState(newState) {
         this.state = { ...this.state, ...newState };
     }
 
     saveGame() {
-        const gameData = JSON.stringify(this.state);
-        localStorage.setItem('machineOfWorldsSave', gameData);
+        try {
+            // Create backup before saving
+            this.createBackup();
+            
+            const gameData = JSON.stringify(this.state);
+            localStorage.setItem('machineOfWorldsSave', gameData);
+            
+            // Clean up old backups (keep only last 3)
+            this.cleanupOldBackups();
+            
+        } catch (error) {
+            console.error('Error saving game:', error);
+            // Try to restore from backup if save fails
+            this.restoreFromBackup();
+            throw error;
+        }
+    }
+
+    // Create a timestamped backup of current save
+    createBackup() {
+        try {
+            const currentSave = localStorage.getItem('machineOfWorldsSave');
+            if (currentSave) {
+                const timestamp = Date.now();
+                const backupKey = `machineOfWorldsBackup_${timestamp}`;
+                localStorage.setItem(backupKey, currentSave);
+                
+                // Store backup metadata
+                const backups = this.getBackupList();
+                backups.push({
+                    key: backupKey,
+                    timestamp: timestamp,
+                    date: new Date(timestamp).toISOString()
+                });
+                localStorage.setItem('machineOfWorldsBackups', JSON.stringify(backups));
+            }
+        } catch (error) {
+            console.error('Error creating backup:', error);
+        }
+    }
+
+    // Get list of available backups
+    getBackupList() {
+        try {
+            const backupsData = localStorage.getItem('machineOfWorldsBackups');
+            return backupsData ? JSON.parse(backupsData) : [];
+        } catch (error) {
+            console.error('Error getting backup list:', error);
+            return [];
+        }
+    }
+
+    // Clean up old backups, keeping only the most recent ones
+    cleanupOldBackups(maxBackups = 3) {
+        try {
+            const backups = this.getBackupList();
+            
+            if (backups.length > maxBackups) {
+                // Sort by timestamp (newest first)
+                backups.sort((a, b) => b.timestamp - a.timestamp);
+                
+                // Remove old backups
+                const backupsToRemove = backups.slice(maxBackups);
+                backupsToRemove.forEach(backup => {
+                    localStorage.removeItem(backup.key);
+                });
+                
+                // Update backup list
+                const keepBackups = backups.slice(0, maxBackups);
+                localStorage.setItem('machineOfWorldsBackups', JSON.stringify(keepBackups));
+            }
+        } catch (error) {
+            console.error('Error cleaning up backups:', error);
+        }
+    }
+
+    // Restore from the most recent backup
+    restoreFromBackup() {
+        try {
+            const backups = this.getBackupList();
+            if (backups.length === 0) {
+                console.warn('No backups available to restore from');
+                return false;
+            }
+            
+            // Get the most recent backup
+            backups.sort((a, b) => b.timestamp - a.timestamp);
+            const latestBackup = backups[0];
+            
+            const backupData = localStorage.getItem(latestBackup.key);
+            if (backupData) {
+                // Validate backup data before restoring
+                const parsedBackup = JSON.parse(backupData);
+                if (this.validateSaveData(parsedBackup)) {
+                    localStorage.setItem('machineOfWorldsSave', backupData);
+                    console.log('Successfully restored from backup:', latestBackup.date);
+                    return true;
+                } else {
+                    console.error('Backup validation failed');
+                    return false;
+                }
+            }
+        } catch (error) {
+            console.error('Error restoring from backup:', error);
+            return false;
+        }
+        return false;
+    }
+
+    // Restore from a specific backup by timestamp
+    restoreFromSpecificBackup(timestamp) {
+        try {
+            const backupKey = `machineOfWorldsBackup_${timestamp}`;
+            const backupData = localStorage.getItem(backupKey);
+            
+            if (backupData) {
+                // Validate backup data before restoring
+                const parsedBackup = JSON.parse(backupData);
+                if (this.validateSaveData(parsedBackup)) {
+                    // Create a backup of current state before restoring
+                    this.createBackup();
+                    
+                    localStorage.setItem('machineOfWorldsSave', backupData);
+                    console.log('Successfully restored from backup:', new Date(timestamp).toISOString());
+                    return true;
+                } else {
+                    console.error('Backup validation failed');
+                    return false;
+                }
+            } else {
+                console.error('Backup not found');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error restoring from specific backup:', error);
+            return false;
+        }
     }
 
     loadGame() {
@@ -145,6 +368,26 @@ export class GameState {
         if (savedData) {
             try {
                 const parsedData = JSON.parse(savedData);
+                
+                // Validate save data integrity
+                if (!this.validateSaveData(parsedData)) {
+                    console.error('Save data validation failed - attempting backup recovery');
+                    
+                    // Try to restore from backup
+                    if (this.restoreFromBackup()) {
+                        // Retry loading after backup restoration
+                        return this.loadGame();
+                    } else {
+                        console.error('Backup recovery failed - using default state');
+                        return false;
+                    }
+                }
+                
+                // Create backup of current state before loading
+                this.createBackup();
+                
+                // Store current state as fallback
+                const fallbackState = JSON.parse(JSON.stringify(this.state));
                 
                 // Merge saved data with current state structure to handle new properties
                 this.state = {
@@ -160,6 +403,8 @@ export class GameState {
                         ...this.state.resources,
                         ...parsedData.resources
                     },
+                    // Ensure currentWorld is preserved
+                    currentWorld: parsedData.currentWorld || this.state.currentWorld,
                     // Ensure new properties exist even in old saves
                     permanentBonuses: {
                         ...this.state.permanentBonuses,
@@ -180,23 +425,139 @@ export class GameState {
                     settings: {
                         ...this.state.settings,
                         ...parsedData.settings
-                    }
+                    },
+                    // Ensure worldHistory exists (for compatibility with old saves)
+                    worldHistory: parsedData.worldHistory || []
                 };
                 
+                try {
+                    // Validate state structure and fix any missing properties
+                    this.validateAndFixState();
+                    
+                    return true;
+                } catch (stateError) {
+                    console.error('Error validating loaded state:', stateError);
+                    
+                    // Restore fallback state if validation fails
+                    this.state = fallbackState;
+                    
+                    // Try to restore from backup as last resort
+                    if (this.restoreFromBackup()) {
+                        console.log('Recovered using backup after state validation failure');
+                        return this.loadGame(); // Retry loading
+                    } else {
+                        throw stateError;
+                    }
+                }
                 
-                // Validate state structure and fix any missing properties
-                this.validateAndFixState();
-            
-                return true;
             } catch (error) {
                 console.error('Error loading saved game:', error);
+                
+                // Try to restore from backup as final fallback
+                if (this.restoreFromBackup()) {
+                    console.log('Attempting backup recovery after load failure');
+                    return this.loadGame(); // Retry loading
+                }
+                
                 return false;
             }
         }
         return false;
     }
 
+    // Validate save data integrity to prevent corruption
+    validateSaveData(data) {
+        // Check if data is an object
+        if (!data || typeof data !== 'object') {
+            console.error('Save data is not a valid object');
+            return false;
+        }
+
+        // Check for required top-level properties
+        const requiredProperties = ['worldsCreated', 'resources', 'upgrades'];
+        for (const prop of requiredProperties) {
+            if (!(prop in data)) {
+                console.error(`Missing required property: ${prop}`);
+                return false;
+            }
+        }
+
+        // Validate numeric properties
+        if (typeof data.worldsCreated !== 'number' || data.worldsCreated < 0) {
+            console.error('Invalid worldsCreated value');
+            return false;
+        }
+
+        // Validate resources object
+        if (!data.resources || typeof data.resources !== 'object') {
+            console.error('Invalid resources object');
+            return false;
+        }
+
+        // Validate resource values are numbers and non-negative
+        const resourceTypes = ['heat', 'fuel', 'pressure', 'energy', 'stability'];
+        for (const resource of resourceTypes) {
+            if (data.resources[resource] !== undefined) {
+                const value = data.resources[resource];
+                if (typeof value !== 'number' || value < 0 || !isFinite(value)) {
+                    console.error(`Invalid resource value for ${resource}: ${value}`);
+                    return false;
+                }
+            }
+        }
+
+        // Validate upgrades object
+        if (!data.upgrades || typeof data.upgrades !== 'object') {
+            console.error('Invalid upgrades object');
+            return false;
+        }
+
+        // Validate upgrade levels
+        for (const [upgradeName, upgrade] of Object.entries(data.upgrades)) {
+            if (upgrade && typeof upgrade === 'object') {
+                if (upgrade.level !== undefined) {
+                    if (typeof upgrade.level !== 'number' || upgrade.level < 0 || !isFinite(upgrade.level)) {
+                        console.error(`Invalid upgrade level for ${upgradeName}: ${upgrade.level}`);
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // Validate world history if present
+        if (data.worldHistory && !Array.isArray(data.worldHistory)) {
+            console.error('Invalid worldHistory - must be an array');
+            return false;
+        }
+
+        // All validations passed
+        return true;
+    }
+
     validateAndFixState() {
+        // Migrate old saves: if worldHistory is empty but worldsCreated > 0, create placeholder history
+        if ((!this.state.worldHistory || this.state.worldHistory.length === 0) && this.state.worldsCreated > 0) {
+            this.state.worldHistory = [];
+            for (let i = 1; i <= this.state.worldsCreated; i++) {
+                this.state.worldHistory.push({
+                    id: i,
+                    type: 'Desert', // Placeholder type
+                    tier: 1,
+                    gravity: 1.0,
+                    timeSpeed: 1.0,
+                    temperature: 25,
+                    atmosphere: 50,
+                    weather: 'Calm',
+                    weatherDuration: 10,
+                    createdAt: Date.now() - (this.state.worldsCreated - i) * 60000 // Fake timestamps
+                });
+            }
+        }
+        
+        // Ensure worldHistory exists
+        if (!this.state.worldHistory) {
+            this.state.worldHistory = [];
+        }
 
         
         // Ensure all required upgrade properties exist
@@ -228,7 +589,6 @@ export class GameState {
 
         // Ensure all required resources exist
         const defaultResources = { heat: 0, fuel: 0, pressure: 0, energy: 0, stability: 0 };
-        const beforeResources = { ...this.state.resources };
         this.state.resources = { ...defaultResources, ...this.state.resources };
     }
 

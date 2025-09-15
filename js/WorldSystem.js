@@ -23,8 +23,9 @@ export class WorldSystem {
                 name: "Enhanced Worlds",
                 types: ['Plasma', 'Nebula', 'Toxic', 'Frozen', 'Quantum', 'Hybrid'],
                 unlockRequirements: {
-                    worldsCreated: 25,
-                    basicUpgradesMaxed: 2 // Need 2 basic upgrades at max level
+                    worldsCreated: 5, // Reduced from 25 to match achievement
+                    basicUpgradesLevel3: 1, // Need 1 basic upgrade at level 3+ (more achievable)
+                    totalResources: 500 // Alternative path: accumulate 500 total resources
                 },
                 propertyRanges: {
                     gravity: { min: 0.2, max: 3.5 },
@@ -37,8 +38,14 @@ export class WorldSystem {
                 name: "Exotic Worlds",
                 types: ['Dimensional', 'Singularity', 'Living', 'Infinite'],
                 unlockRequirements: {
-                    worldsCreated: 100,
-                    crossUpgradeLevel5: 1 // Need 1 cross-resource upgrade at level 5+
+                    worldsCreated: 25, // Reduced from 100 to be more achievable
+                    crossUpgradeLevel3: 2, // Need 2 cross-upgrades at level 3+ (more achievable than level 5)
+                    tier2WorldsCreated: 10, // Must create some Tier 2 worlds first
+                    resourceMilestones: { // Alternative unlock path
+                        heat: 5000,
+                        fuel: 5000,
+                        pressure: 50
+                    }
                 },
                 propertyRanges: {
                     gravity: { min: 0.1, max: 5.0 },
@@ -54,35 +61,145 @@ export class WorldSystem {
         const state = this.gameState.getState();
         if (!state || !state.worldTiers || !state.upgrades) return null;
         
-        // Check Tier 2 unlock
+        // Check Tier 2 unlock - Multiple paths to unlock
         if (!state.worldTiers.tier2Unlocked) {
-            const basicUpgradesMaxed = Object.keys(state.upgrades)
+            const basicUpgradesLevel3 = Object.keys(state.upgrades)
                 .filter(key => ['heatGenerator', 'fuelEfficiency'].includes(key))
-                .filter(key => state.upgrades[key] && state.upgrades[key].level >= state.upgrades[key].maxLevel)
+                .filter(key => state.upgrades[key] && state.upgrades[key].level >= 3)
                 .length;
-                
-            if (state.worldsCreated >= this.worldTierDefinitions.tier2.unlockRequirements.worldsCreated &&
-                basicUpgradesMaxed >= this.worldTierDefinitions.tier2.unlockRequirements.basicUpgradesMaxed) {
+            
+            const totalResources = Object.values(state.resources).reduce((sum, val) => sum + val, 0);
+            
+            // Check multiple unlock conditions (OR logic for flexibility)
+            const worldsRequirement = state.worldsCreated >= this.worldTierDefinitions.tier2.unlockRequirements.worldsCreated;
+            const upgradeRequirement = basicUpgradesLevel3 >= this.worldTierDefinitions.tier2.unlockRequirements.basicUpgradesLevel3;
+            const resourceRequirement = totalResources >= this.worldTierDefinitions.tier2.unlockRequirements.totalResources;
+            
+            if (worldsRequirement && (upgradeRequirement || resourceRequirement)) {
                 state.worldTiers.tier2Unlocked = true;
                 return { tier: 2, message: "🌟 Tier 2: Enhanced Worlds Unlocked! New world types available!" };
             }
         }
         
-        // Check Tier 3 unlock
-        if (!state.worldTiers.tier3Unlocked) {
-            const crossUpgradesLevel5 = Object.keys(state.upgrades)
+        // Check Tier 3 unlock - More achievable requirements
+        if (!state.worldTiers.tier3Unlocked && state.worldTiers.tier2Unlocked) {
+            const crossUpgradesLevel3 = Object.keys(state.upgrades)
                 .filter(key => ['thermalAccelerator', 'fuelSynchronizer', 'pressureValve', 'energyMatrix'].includes(key))
-                .filter(key => state.upgrades[key] && state.upgrades[key].level >= 5)
+                .filter(key => state.upgrades[key] && state.upgrades[key].level >= 3)
                 .length;
-                
-            if (state.worldsCreated >= this.worldTierDefinitions.tier3.unlockRequirements.worldsCreated &&
-                crossUpgradesLevel5 >= this.worldTierDefinitions.tier3.unlockRequirements.crossUpgradeLevel5) {
+            
+            // Count Tier 2+ worlds created (approximate based on total worlds and tier unlock timing)
+            const tier2WorldsEstimate = Math.max(0, state.worldsCreated - 5); // Rough estimate
+            
+            // Check resource milestones
+            const resourceMilestones = this.worldTierDefinitions.tier3.unlockRequirements.resourceMilestones;
+            const resourceMilestonesmet = 
+                state.resources.heat >= resourceMilestones.heat &&
+                state.resources.fuel >= resourceMilestones.fuel &&
+                state.resources.pressure >= resourceMilestones.pressure;
+            
+            // Multiple unlock paths for Tier 3
+            const worldsRequirement = state.worldsCreated >= this.worldTierDefinitions.tier3.unlockRequirements.worldsCreated;
+            const upgradeRequirement = crossUpgradesLevel3 >= this.worldTierDefinitions.tier3.unlockRequirements.crossUpgradeLevel3;
+            const tier2WorldsRequirement = tier2WorldsEstimate >= this.worldTierDefinitions.tier3.unlockRequirements.tier2WorldsCreated;
+            
+            if (worldsRequirement && upgradeRequirement && (tier2WorldsRequirement || resourceMilestonesmet)) {
                 state.worldTiers.tier3Unlocked = true;
                 return { tier: 3, message: "✨ Tier 3: Exotic Worlds Unlocked! Reality-bending worlds await!" };
             }
         }
         
         return null;
+    }
+
+    getTierUnlockProgress() {
+        const state = this.gameState.getState();
+        if (!state || !state.worldTiers || !state.upgrades) return {};
+        
+        const progress = {
+            tier2: {
+                unlocked: state.worldTiers.tier2Unlocked,
+                requirements: []
+            },
+            tier3: {
+                unlocked: state.worldTiers.tier3Unlocked,
+                requirements: []
+            }
+        };
+        
+        // Tier 2 progress
+        if (!state.worldTiers.tier2Unlocked) {
+            const basicUpgradesLevel3 = Object.keys(state.upgrades)
+                .filter(key => ['heatGenerator', 'fuelEfficiency'].includes(key))
+                .filter(key => state.upgrades[key] && state.upgrades[key].level >= 3)
+                .length;
+            
+            const totalResources = Object.values(state.resources).reduce((sum, val) => sum + val, 0);
+            
+            progress.tier2.requirements = [
+                {
+                    type: 'worlds',
+                    current: state.worldsCreated,
+                    required: this.worldTierDefinitions.tier2.unlockRequirements.worldsCreated,
+                    completed: state.worldsCreated >= this.worldTierDefinitions.tier2.unlockRequirements.worldsCreated
+                },
+                {
+                    type: 'upgrades',
+                    current: basicUpgradesLevel3,
+                    required: this.worldTierDefinitions.tier2.unlockRequirements.basicUpgradesLevel3,
+                    completed: basicUpgradesLevel3 >= this.worldTierDefinitions.tier2.unlockRequirements.basicUpgradesLevel3,
+                    description: 'Basic upgrades at level 3+'
+                },
+                {
+                    type: 'resources',
+                    current: totalResources,
+                    required: this.worldTierDefinitions.tier2.unlockRequirements.totalResources,
+                    completed: totalResources >= this.worldTierDefinitions.tier2.unlockRequirements.totalResources,
+                    description: 'Total resources (alternative)',
+                    alternative: true
+                }
+            ];
+        }
+        
+        // Tier 3 progress
+        if (!state.worldTiers.tier3Unlocked && state.worldTiers.tier2Unlocked) {
+            const crossUpgradesLevel3 = Object.keys(state.upgrades)
+                .filter(key => ['thermalAccelerator', 'fuelSynchronizer', 'pressureValve', 'energyMatrix'].includes(key))
+                .filter(key => state.upgrades[key] && state.upgrades[key].level >= 3)
+                .length;
+            
+            const resourceMilestones = this.worldTierDefinitions.tier3.unlockRequirements.resourceMilestones;
+            const resourceMilestonesmet = 
+                state.resources.heat >= resourceMilestones.heat &&
+                state.resources.fuel >= resourceMilestones.fuel &&
+                state.resources.pressure >= resourceMilestones.pressure;
+            
+            progress.tier3.requirements = [
+                {
+                    type: 'worlds',
+                    current: state.worldsCreated,
+                    required: this.worldTierDefinitions.tier3.unlockRequirements.worldsCreated,
+                    completed: state.worldsCreated >= this.worldTierDefinitions.tier3.unlockRequirements.worldsCreated
+                },
+                {
+                    type: 'cross-upgrades',
+                    current: crossUpgradesLevel3,
+                    required: this.worldTierDefinitions.tier3.unlockRequirements.crossUpgradeLevel3,
+                    completed: crossUpgradesLevel3 >= this.worldTierDefinitions.tier3.unlockRequirements.crossUpgradeLevel3,
+                    description: 'Cross-resource upgrades at level 3+'
+                },
+                {
+                    type: 'milestones',
+                    current: `${state.resources.heat}/${state.resources.fuel}/${state.resources.pressure}`,
+                    required: `${resourceMilestones.heat}/${resourceMilestones.fuel}/${resourceMilestones.pressure}`,
+                    completed: resourceMilestonesmet,
+                    description: 'Heat/Fuel/Pressure milestones (alternative)',
+                    alternative: true
+                }
+            ];
+        }
+        
+        return progress;
     }
 
     getAvailableWorldTypes() {
