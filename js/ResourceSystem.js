@@ -29,182 +29,86 @@ export class ResourceSystem {
     }
 
     generateResources(world) {
-        if (!world) return;
+        if (!world || !world.resourceGeneration) return;
         
-        // Base resource generation
-        const baseGain = 5;
-        let heatGain = baseGain * world.gravity;
-        let fuelGain = baseGain * world.timeSpeed;
-
-        // Gravity extremes rebalance generation
-        if (world.gravity > 2.0) { // High gravity favors heat systems
-            heatGain *= 1.15;
-            fuelGain *= 0.9;
-        } else if (world.gravity < 0.7) { // Low gravity favors fuel efficiency
-            fuelGain *= 1.1;
-        }
-
-        // Time speed extremes
-        if (world.timeSpeed > 1.8) {
-            fuelGain *= 1.15; // Fast time increases fuel throughput
-        } else if (world.timeSpeed < 0.5) {
-            heatGain *= 1.1; // Slow time helps heat retention/generation
-        }
-        
-        // Apply world tier special effects
-        if (world.specialEffects && world.specialEffects.effects) {
-            const effects = world.specialEffects.effects;
-            
-            if (effects.heat) heatGain *= effects.heat;
-            if (effects.fuel) fuelGain *= effects.fuel;
-            
-            // Special handling for Quantum worlds
-            if (effects.all === 'random') {
-                const randomBonus = 0.5 + Math.random() * 1.5; // 0.5x to 2.0x
-                heatGain *= randomBonus;
-                fuelGain *= randomBonus;
-            } else if (typeof effects.all === 'number') {
-                heatGain *= effects.all;
-                fuelGain *= effects.all;
-            }
-        }
-        
-    // Apply upgrade bonuses
         const state = this.gameState.getState();
-        const heatUpgradeBonus = 1 + (state.upgrades.heatGenerator.level * 0.1);
-        const fuelUpgradeBonus = 1 + (state.upgrades.fuelEfficiency.level * 0.1);
+        const resourceGains = {};
         
-        heatGain *= heatUpgradeBonus;
-        fuelGain *= fuelUpgradeBonus;
-        
-        // Apply world bonuses to manual generation
-        const worldBonuses = this.getWorldBonuses();
-        heatGain *= worldBonuses.heatMultiplier;
-        fuelGain *= worldBonuses.fuelMultiplier;
-        
-        // Apply cross-resource upgrade bonuses
-        this.applyCrossResourceBonuses({ heat: heatGain, fuel: fuelGain });
-        
-        // Temperature effects (hot/cold/moderate)
-        if (world.temperature > 75) {
-            heatGain *= 1.25;
-        } else if (world.temperature < 0) {
-            fuelGain *= 1.2;
-        }
-
-        // Atmosphere effects
-        if (world.atmosphere > 70) {
-            heatGain *= 1.15; // High atmosphere improves heat efficiency
-        } else if (world.atmosphere < 30) {
-            fuelGain *= 1.3; // Low atmosphere improves energy-related systems (proxy fuel)
-        }
-
-        // Weather effects
-        switch (world.weather) {
-            case 'Stormy':
-                fuelGain *= 1.5;
-                heatGain *= 1.25;
-                break;
-            case 'Calm':
-                fuelGain *= 1.15;
-                heatGain *= 1.15;
-                break;
-            case 'Chaotic': {
-                const variance = 0.25 + Math.random() * 0.5; // 25%-75%
-                const direction = Math.random() < 0.5 ? -1 : 1;
-                heatGain *= 1 + variance * direction;
-                fuelGain *= 1 + variance * direction;
-                break;
+        // Generate resources based on world definition
+        for (const [resourceType, config] of Object.entries(world.resourceGeneration)) {
+            const baseGain = config.base || 0;
+            const multiplier = config.multiplier || 1.0;
+            
+            let gain = baseGain * multiplier;
+            
+            // Apply temperature effects
+            if (resourceType === 'heat' && world.temperature > 50) {
+                gain *= 1.2;
+            } else if (resourceType === 'ice' && world.temperature < 0) {
+                gain *= 1.3;
+            } else if (resourceType === 'water' && world.atmosphere > 70) {
+                gain *= 1.15;
             }
-            case 'Serene':
-                fuelGain *= 1.3;
-                break;
-            case 'Turbulent':
-                heatGain *= 0.8; // Heat generation suppressed
-                break;
+            
+            // Apply upgrade bonuses for heat and fuel
+            if (resourceType === 'heat' && state.upgrades.heatGenerator) {
+                gain *= (1 + state.upgrades.heatGenerator.level * 0.1);
+            } else if (resourceType === 'fuel' && state.upgrades.fuelEfficiency) {
+                gain *= (1 + state.upgrades.fuelEfficiency.level * 0.1);
+            }
+            
+            // Apply permanent bonuses
+            gain *= state.permanentBonuses.resourceEfficiency;
+            
+            resourceGains[resourceType] = Math.floor(gain);
         }
-
-        // Combo: Heat + Pressure synergy
-        if (state.resources.pressure > 40) {
-            heatGain *= 1.3;
-        }
-
-        // Apply permanent bonuses last
-        heatGain *= state.permanentBonuses.resourceEfficiency;
-        fuelGain *= state.permanentBonuses.resourceEfficiency;
-
-        // Use the new addResources method instead of direct modification
-        this.gameState.addResources({ 
-            heat: Math.floor(heatGain), 
-            fuel: Math.floor(fuelGain) 
-        }, true); // Trigger save for manual clicks
-
-        // Generate other resources (after applying primaries)
-        this.generatePressure(world);
-        this.generateStability(world);
-        this.generateEnergy(world);
         
-        // Apply resource decay from world changes
-        this.applyResourceDecay(world);
+        // Use the new addResources method
+        this.gameState.addResources(resourceGains, true);
         
-        return { heat: Math.floor(heatGain), fuel: Math.floor(fuelGain) };
+        return resourceGains;
     }
 
     generateResource(type) {
-        const baseGain = 8; // Increased from 5 to 8 for better early game
         const state = this.gameState.getState();
         const world = state.currentWorld;
         
-        if (!world) {
+        if (!world || !world.resourceGeneration || !world.resourceGeneration[type]) {
             return 0;
         }
         
-        let gain = 0;
+        // Get resource generation config for this world and resource type
+        const config = world.resourceGeneration[type];
+        const baseGain = config.base || 0;
+        const multiplier = config.multiplier || 1.0;
         
-        switch (type) {
-            case 'heat':
-                gain = baseGain * world.gravity;
-                // Apply heat generator upgrade - improved effectiveness
-                const heatBonus = 1 + (state.upgrades.heatGenerator.level * 0.2); // Increased from 10% to 20% per level
-                gain *= heatBonus;
-                
-                // Apply world effects
-                if (world.temperature > 75) {
-                    gain *= 1.25; // Hot worlds boost heat
-                }
-                
-                // Weather effects
-                if (world.weather === 'Stormy') {
-                    gain *= 1.5;
-                }
-                break;
-                
-            case 'fuel':
-                gain = baseGain * world.timeSpeed;
-                // Apply fuel efficiency upgrade - improved effectiveness
-                const fuelBonus = 1 + (state.upgrades.fuelEfficiency.level * 0.2); // Increased from 10% to 20% per level
-                gain *= fuelBonus;
-                
-                // Apply world effects
-                if (world.temperature < 0) {
-                    gain *= 1.2; // Cold worlds boost fuel efficiency
-                }
-                
-                // Weather effects
-                if (world.weather === 'Stormy') {
-                    gain *= 1.5;
-                } else if (world.weather === 'Serene') {
-                    gain *= 1.3;
-                }
-                break;
+        let gain = baseGain * multiplier;
+        
+        // Apply temperature effects
+        if (type === 'heat' && world.temperature > 50) {
+            gain *= 1.2;
+        } else if (type === 'ice' && world.temperature < 0) {
+            gain *= 1.3;
+        } else if (type === 'water' && world.atmosphere > 70) {
+            gain *= 1.15;
+        }
+        
+        // Apply upgrade bonuses for heat and fuel
+        if (type === 'heat' && state.upgrades.heatGenerator) {
+            gain *= (1 + state.upgrades.heatGenerator.level * 0.2);
+        } else if (type === 'fuel' && state.upgrades.fuelEfficiency) {
+            gain *= (1 + state.upgrades.fuelEfficiency.level * 0.2);
         }
         
         // Apply event multipliers
         gain = this.applyEventMultipliers(type, gain);
         
+        // Apply permanent bonuses
+        gain *= state.permanentBonuses.resourceEfficiency;
+        
         // Use addResources method to ensure save is triggered
         const gainAmount = Math.floor(gain);
-        this.gameState.addResources({ [type]: gainAmount }, true); // Save immediately for manual clicks
+        this.gameState.addResources({ [type]: gainAmount }, true);
         
         // Track manual generation for achievements
         if (this.achievementSystem) {

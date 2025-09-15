@@ -125,6 +125,9 @@ export class Game {
             this.loadingManager.updateProgress(90, 'Loading saved data...', 'Restoring your progress');
             this.loadGame(); // Try to load saved game first
             
+            // Initialize starting world if no current world is set
+            this.initializeStartingWorld();
+            
             // Initialize auto-save after loading game settings
             const state = this.gameState.getState();
             const autoSaveInterval = state.settings.autoSaveInterval || 30;
@@ -212,29 +215,34 @@ export class Game {
     createWorld() {
         const state = this.gameState.getState();
         
-        // Calculate exponential world cost
-        const baseMultiplier = Math.floor(state.worldsCreated / 5);
-        const exponentialCost = Math.floor(10 * Math.pow(2, baseMultiplier) * (1 + (state.worldsCreated % 5) * 0.4));
+        // Get the next world that can be unlocked
+        const nextWorld = this.worldSystem.getNextUnlockableWorld();
         
-        // Check if player can afford the world
-        if (state.resources.heat < exponentialCost || state.resources.fuel < exponentialCost) {
-            this.uiSystem.showNotification('Not enough resources to create a world!');
+        if (!nextWorld) {
+            this.uiSystem.showNotification('All worlds have been unlocked!');
             return;
         }
         
-        console.log('[Game] Creating world...');
+        if (!nextWorld.canUnlock) {
+            // Show what resources are needed
+            const requirements = [];
+            for (const [resource, amount] of Object.entries(nextWorld.requirements)) {
+                const current = state.resources[resource] || 0;
+                if (current < amount) {
+                    requirements.push(`${resource}: ${current}/${amount}`);
+                }
+            }
+            this.uiSystem.showNotification(`Cannot unlock ${nextWorld.world.name}. Need: ${requirements.join(', ')}`);
+            return;
+        }
         
-        // Deduct the cost
-        state.resources.heat -= exponentialCost;
-        state.resources.fuel -= exponentialCost;
+        console.log('[Game] Unlocking world:', nextWorld.world.name);
         
-        const world = this.worldSystem.generateRandomWorld();
-        state.currentWorld = world;
-        state.worldsCreated++;
-        
-        // Track tier-specific world creation for achievements
-        if (this.achievementSystem && world.tier) {
-            this.achievementSystem.trackTierWorldCreation(world.tier);
+        // Unlock and select the world
+        const success = this.worldSystem.selectWorld(nextWorld.world.id);
+        if (!success) {
+            this.uiSystem.showNotification('Failed to unlock world!');
+            return;
         }
         
         // Add world to history
@@ -242,21 +250,21 @@ export class Game {
             state.worldHistory = [];
         }
         state.worldHistory.push({
-            ...world,
+            ...nextWorld.world,
             createdAt: Date.now(),
-            id: state.worldsCreated
+            unlockedAt: state.worldsCreated
         });
         
         // Generate resources from the world
-        const resourceGains = this.resourceSystem.generateResources(world);
+        const resourceGains = this.resourceSystem.generateResources(state.currentWorld);
         
-        // Check for tier unlocks
-        const tierUnlock = this.worldSystem.checkWorldTierUnlocks();
-        if (tierUnlock) {
-            this.uiSystem.showNotification(tierUnlock.message);
+        // Check for new world unlocks
+        const worldUnlock = this.worldSystem.checkWorldUnlocks();
+        if (worldUnlock) {
+            this.uiSystem.showNotification(worldUnlock.message);
         }
         
-        // Add machine part (only when creating worlds)
+        // Add machine part (only when unlocking worlds)
         this.machineSystem.addMachinePart('world');
         
         // Update machine complexity
@@ -270,12 +278,6 @@ export class Game {
         
         // Update active events (reduce duration)
         this.eventSystem.updateActiveEvents();
-
-        // Weather duration decrement (handled per world creation action)
-        if (state.currentWorld && typeof state.currentWorld.weatherDuration === 'number') {
-            // On creation we've just set a fresh world; nothing to decrement here.
-            // Future per-action systems (e.g. generate heat/fuel) could call a shared method.
-        }
         
         // Check achievements after world creation
         this.checkAndNotifyAchievements();
@@ -289,8 +291,9 @@ export class Game {
         // Visual feedback
         this.uiSystem.showResourceGain();
         this.machineSystem.animateResource('world');
-    // Weather UI refresh - temporarily disabled
-    // this.uiSystem.updateWeatherWidget();
+        
+        // Show the newly unlocked world
+        this.uiSystem.showNotification(`🌍 ${nextWorld.world.name} unlocked and selected!`);
     }
 
     generateResource(type) {
@@ -683,6 +686,37 @@ export class Game {
 
     getUISystem() {
         return this.uiSystem;
+    }
+
+    initializeStartingWorld() {
+        const state = this.gameState.getState();
+        
+        // If no current world is set, initialize with Desert Planet
+        if (!state.currentWorld) {
+            const desertPlanet = this.worldSystem.getWorldById(0);
+            if (desertPlanet) {
+                state.currentWorld = {
+                    ...desertPlanet,
+                    id: 0,
+                    type: desertPlanet.type,
+                    name: desertPlanet.name,
+                    description: desertPlanet.description,
+                    ...desertPlanet.properties
+                };
+            }
+        }
+        
+        // Ensure unlockedWorlds array exists and includes Desert Planet
+        if (!state.unlockedWorlds) {
+            state.unlockedWorlds = [0];
+        } else if (!state.unlockedWorlds.includes(0)) {
+            state.unlockedWorlds.push(0);
+        }
+        
+        // Ensure worldProgress exists
+        if (typeof state.worldProgress === 'undefined') {
+            state.worldProgress = 0;
+        }
     }
 }
 

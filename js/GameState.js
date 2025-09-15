@@ -9,9 +9,13 @@ export class GameState {
             resources: {
                 heat: 0,
                 fuel: 0,
-                pressure: 0,
-                energy: 0,
-                stability: 0
+                water: 0,
+                oxygen: 0,
+                stone: 0,
+                magma: 0,
+                ice: 0,
+                crystal: 0,
+                voidEnergy: 0
             },
             upgrades: {
                 heatGenerator: { level: 0, maxLevel: 10, baseCost: 10 },
@@ -22,16 +26,9 @@ export class GameState {
                 pressureValve: { level: 0, maxLevel: 5, baseCost: 35, unlocked: false, requiresStability: 15, requiresPressure: 50 },
                 energyMatrix: { level: 0, maxLevel: 5, baseCost: 40, unlocked: false, requiresHeat: 7, requiresFuel: 8 }
             },
-            currentWorld: {
-                type: 'Desert',
-                tier: 1,
-                gravity: 1.0,
-                timeSpeed: 1.0,
-                temperature: 25,
-                atmosphere: 50,
-                weather: 'Calm',
-                weatherDuration: 10
-            },
+            currentWorld: null, // Will be set to Desert Planet initially
+            unlockedWorlds: [0], // Desert Planet unlocked by default
+            worldProgress: 0, // Current world index (0 = Desert Planet)
             machineParts: [],
             // RNG Event System (Phase 2 Step 3)
             activeEvents: [],

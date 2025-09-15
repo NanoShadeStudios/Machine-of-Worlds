@@ -1,324 +1,356 @@
-// WorldSystem.js - Handles world generation, world tiers, and world properties
+// WorldSystem.js - Handles structured world progression with specific worlds and resources
 
 export class WorldSystem {
     constructor(gameState) {
         this.gameState = gameState;
-        this.worldTierDefinitions = this.initializeWorldTiers();
+        this.worldDefinitions = this.initializeWorldDefinitions();
     }
 
-    initializeWorldTiers() {
-        return {
-            tier1: {
-                name: "Basic Worlds",
-                types: ['Desert', 'Ocean', 'Forest', 'Mountain', 'Volcanic', 'Ice', 'Crystal', 'Void'],
-                unlocked: true,
-                propertyRanges: {
-                    gravity: { min: 0.5, max: 2.5 },
-                    timeSpeed: { min: 0.3, max: 2.0 },
-                    temperature: { min: -50, max: 150 },
-                    atmosphere: { min: 0, max: 100 }
-                }
-            },
-            tier2: {
-                name: "Enhanced Worlds",
-                types: ['Plasma', 'Nebula', 'Toxic', 'Frozen', 'Quantum', 'Hybrid'],
-                unlockRequirements: {
-                    worldsCreated: 5, // Reduced from 25 to match achievement
-                    basicUpgradesLevel3: 1, // Need 1 basic upgrade at level 3+ (more achievable)
-                    totalResources: 500 // Alternative path: accumulate 500 total resources
+    initializeWorldDefinitions() {
+        return [
+            {
+                id: 0,
+                name: "Desert Planet",
+                type: "Desert",
+                description: "A harsh, arid world with extreme heat. The starting point of your journey.",
+                unlockRequirements: {}, // Always unlocked (starting world)
+                introducesResources: ['heat', 'fuel'],
+                resourceGeneration: {
+                    heat: { base: 12, multiplier: 1.5 },
+                    fuel: { base: 8, multiplier: 1.0 }
                 },
-                propertyRanges: {
-                    gravity: { min: 0.2, max: 3.5 },
-                    timeSpeed: { min: 0.1, max: 3.0 },
-                    temperature: { min: -100, max: 300 },
-                    atmosphere: { min: 0, max: 150 }
-                }
-            },
-            tier3: {
-                name: "Exotic Worlds",
-                types: ['Dimensional', 'Singularity', 'Living', 'Infinite'],
-                unlockRequirements: {
-                    worldsCreated: 25, // Reduced from 100 to be more achievable
-                    crossUpgradeLevel3: 2, // Need 2 cross-upgrades at level 3+ (more achievable than level 5)
-                    tier2WorldsCreated: 10, // Must create some Tier 2 worlds first
-                    resourceMilestones: { // Alternative unlock path
-                        heat: 5000,
-                        fuel: 5000,
-                        pressure: 50
-                    }
+                properties: {
+                    temperature: 45,
+                    atmosphere: 20,
+                    gravity: 1.0,
+                    timeSpeed: 1.0
                 },
-                propertyRanges: {
-                    gravity: { min: 0.1, max: 5.0 },
-                    timeSpeed: { min: 0.05, max: 4.0 },
-                    temperature: { min: -200, max: 500 },
-                    atmosphere: { min: 0, max: 200 }
-                }
+                unlocked: true
+            },
+            {
+                id: 1,
+                name: "Ocean Planet",
+                type: "Ocean",
+                description: "A water world with vast seas and humidity. Introduces water extraction.",
+                unlockRequirements: {
+                    heat: 50,
+                    fuel: 25
+                },
+                introducesResources: ['water'],
+                resourceGeneration: {
+                    water: { base: 10, multiplier: 1.8 },
+                    fuel: { base: 12, multiplier: 1.2 },
+                    heat: { base: 6, multiplier: 0.8 }
+                },
+                properties: {
+                    temperature: 15,
+                    atmosphere: 80,
+                    gravity: 0.9,
+                    timeSpeed: 1.1
+                },
+                unlocked: false
+            },
+            {
+                id: 2,
+                name: "Forest Planet",
+                type: "Forest",
+                description: "A lush world covered in vegetation. Rich in oxygen and life energy.",
+                unlockRequirements: {
+                    heat: 25,
+                    fuel: 25,
+                    water: 30
+                },
+                introducesResources: ['oxygen'],
+                resourceGeneration: {
+                    oxygen: { base: 8, multiplier: 2.0 },
+                    heat: { base: 10, multiplier: 1.3 },
+                    water: { base: 8, multiplier: 1.4 },
+                    fuel: { base: 6, multiplier: 0.9 }
+                },
+                properties: {
+                    temperature: 22,
+                    atmosphere: 95,
+                    gravity: 1.1,
+                    timeSpeed: 0.9
+                },
+                unlocked: false
+            },
+            {
+                id: 3,
+                name: "Mountain Planet",
+                type: "Mountain",
+                description: "A rocky world with towering peaks. Rich in mineral deposits and stone.",
+                unlockRequirements: {
+                    heat: 25,
+                    fuel: 25,
+                    water: 25,
+                    oxygen: 20
+                },
+                introducesResources: ['stone'],
+                resourceGeneration: {
+                    stone: { base: 6, multiplier: 2.2 },
+                    heat: { base: 8, multiplier: 1.4 },
+                    fuel: { base: 5, multiplier: 1.1 },
+                    oxygen: { base: 4, multiplier: 0.7 }
+                },
+                properties: {
+                    temperature: 5,
+                    atmosphere: 45,
+                    gravity: 1.3,
+                    timeSpeed: 0.8
+                },
+                unlocked: false
+            },
+            {
+                id: 4,
+                name: "Volcanic Planet",
+                type: "Volcanic",
+                description: "A world of fire and molten rock. Extreme heat and magma flows.",
+                unlockRequirements: {
+                    heat: 50,
+                    fuel: 25,
+                    water: 25,
+                    oxygen: 20,
+                    stone: 30
+                },
+                introducesResources: ['magma'],
+                resourceGeneration: {
+                    magma: { base: 5, multiplier: 2.5 },
+                    heat: { base: 18, multiplier: 2.0 },
+                    stone: { base: 8, multiplier: 1.3 },
+                    water: { base: 2, multiplier: 0.3 }
+                },
+                properties: {
+                    temperature: 85,
+                    atmosphere: 25,
+                    gravity: 1.2,
+                    timeSpeed: 1.3
+                },
+                unlocked: false
+            },
+            {
+                id: 5,
+                name: "Ice Planet",
+                type: "Ice",
+                description: "A frozen world of eternal winter. Ice formations and crystalline structures.",
+                unlockRequirements: {
+                    heat: 25,
+                    fuel: 25,
+                    water: 40,
+                    oxygen: 20,
+                    stone: 25,
+                    magma: 20
+                },
+                introducesResources: ['ice'],
+                resourceGeneration: {
+                    ice: { base: 7, multiplier: 2.3 },
+                    water: { base: 12, multiplier: 1.8 },
+                    oxygen: { base: 6, multiplier: 1.2 },
+                    heat: { base: 3, multiplier: 0.4 },
+                    magma: { base: 1, multiplier: 0.2 }
+                },
+                properties: {
+                    temperature: -35,
+                    atmosphere: 55,
+                    gravity: 0.8,
+                    timeSpeed: 0.7
+                },
+                unlocked: false
+            },
+            {
+                id: 6,
+                name: "Crystal Planet",
+                type: "Crystal",
+                description: "A world of living crystal formations. Resonant energy and geometric perfection.",
+                unlockRequirements: {
+                    heat: 30,
+                    fuel: 30,
+                    water: 30,
+                    oxygen: 25,
+                    stone: 30,
+                    magma: 20,
+                    ice: 25
+                },
+                introducesResources: ['crystal'],
+                resourceGeneration: {
+                    crystal: { base: 4, multiplier: 3.0 },
+                    stone: { base: 10, multiplier: 1.6 },
+                    ice: { base: 8, multiplier: 1.4 },
+                    oxygen: { base: 6, multiplier: 1.1 }
+                },
+                properties: {
+                    temperature: 18,
+                    atmosphere: 40,
+                    gravity: 1.4,
+                    timeSpeed: 1.1
+                },
+                unlocked: false
+            },
+            {
+                id: 7,
+                name: "Void Planet",
+                type: "Void",
+                description: "A mysterious world at the edge of reality. Source of pure void energy.",
+                unlockRequirements: {
+                    heat: 40,
+                    fuel: 40,
+                    water: 35,
+                    oxygen: 30,
+                    stone: 35,
+                    magma: 25,
+                    ice: 30,
+                    crystal: 20
+                },
+                introducesResources: ['voidEnergy'],
+                resourceGeneration: {
+                    voidEnergy: { base: 2, multiplier: 4.0 },
+                    crystal: { base: 6, multiplier: 1.3 },
+                    // Void energy enhances all other resources when generated
+                    heat: { base: 4, multiplier: 1.2 },
+                    fuel: { base: 4, multiplier: 1.2 },
+                    water: { base: 4, multiplier: 1.2 },
+                    oxygen: { base: 4, multiplier: 1.2 },
+                    stone: { base: 4, multiplier: 1.2 },
+                    magma: { base: 4, multiplier: 1.2 },
+                    ice: { base: 4, multiplier: 1.2 }
+                },
+                properties: {
+                    temperature: 0,
+                    atmosphere: 0,
+                    gravity: 0.5,
+                    timeSpeed: 2.0
+                },
+                unlocked: false
             }
-        };
+        ];
     }
 
-    checkWorldTierUnlocks() {
+    checkWorldUnlocks() {
         const state = this.gameState.getState();
-        if (!state || !state.worldTiers || !state.upgrades) return null;
+        if (!state || !state.resources) return null;
         
-        // Check Tier 2 unlock - Multiple paths to unlock
-        if (!state.worldTiers.tier2Unlocked) {
-            const basicUpgradesLevel3 = Object.keys(state.upgrades)
-                .filter(key => ['heatGenerator', 'fuelEfficiency'].includes(key))
-                .filter(key => state.upgrades[key] && state.upgrades[key].level >= 3)
-                .length;
+        // Check each world to see if it can be unlocked
+        for (let i = 0; i < this.worldDefinitions.length; i++) {
+            const world = this.worldDefinitions[i];
             
-            const totalResources = Object.values(state.resources).reduce((sum, val) => sum + val, 0);
+            // Skip if already unlocked
+            if (state.unlockedWorlds.includes(world.id)) continue;
             
-            // Check multiple unlock conditions (OR logic for flexibility)
-            const worldsRequirement = state.worldsCreated >= this.worldTierDefinitions.tier2.unlockRequirements.worldsCreated;
-            const upgradeRequirement = basicUpgradesLevel3 >= this.worldTierDefinitions.tier2.unlockRequirements.basicUpgradesLevel3;
-            const resourceRequirement = totalResources >= this.worldTierDefinitions.tier2.unlockRequirements.totalResources;
-            
-            if (worldsRequirement && (upgradeRequirement || resourceRequirement)) {
-                state.worldTiers.tier2Unlocked = true;
-                return { tier: 2, message: "🌟 Tier 2: Enhanced Worlds Unlocked! New world types available!" };
-            }
-        }
-        
-        // Check Tier 3 unlock - More achievable requirements
-        if (!state.worldTiers.tier3Unlocked && state.worldTiers.tier2Unlocked) {
-            const crossUpgradesLevel3 = Object.keys(state.upgrades)
-                .filter(key => ['thermalAccelerator', 'fuelSynchronizer', 'pressureValve', 'energyMatrix'].includes(key))
-                .filter(key => state.upgrades[key] && state.upgrades[key].level >= 3)
-                .length;
-            
-            // Count Tier 2+ worlds created (approximate based on total worlds and tier unlock timing)
-            const tier2WorldsEstimate = Math.max(0, state.worldsCreated - 5); // Rough estimate
-            
-            // Check resource milestones
-            const resourceMilestones = this.worldTierDefinitions.tier3.unlockRequirements.resourceMilestones;
-            const resourceMilestonesmet = 
-                state.resources.heat >= resourceMilestones.heat &&
-                state.resources.fuel >= resourceMilestones.fuel &&
-                state.resources.pressure >= resourceMilestones.pressure;
-            
-            // Multiple unlock paths for Tier 3
-            const worldsRequirement = state.worldsCreated >= this.worldTierDefinitions.tier3.unlockRequirements.worldsCreated;
-            const upgradeRequirement = crossUpgradesLevel3 >= this.worldTierDefinitions.tier3.unlockRequirements.crossUpgradeLevel3;
-            const tier2WorldsRequirement = tier2WorldsEstimate >= this.worldTierDefinitions.tier3.unlockRequirements.tier2WorldsCreated;
-            
-            if (worldsRequirement && upgradeRequirement && (tier2WorldsRequirement || resourceMilestonesmet)) {
-                state.worldTiers.tier3Unlocked = true;
-                return { tier: 3, message: "✨ Tier 3: Exotic Worlds Unlocked! Reality-bending worlds await!" };
+            // Check if requirements are met
+            const canUnlock = this.canUnlockWorld(world.id);
+            if (canUnlock) {
+                state.unlockedWorlds.push(world.id);
+                return { 
+                    worldId: world.id, 
+                    message: `🌍 ${world.name} Unlocked! ${world.description}` 
+                };
             }
         }
         
         return null;
     }
 
-    getTierUnlockProgress() {
+    canUnlockWorld(worldId) {
         const state = this.gameState.getState();
-        if (!state || !state.worldTiers || !state.upgrades) return {};
+        const world = this.worldDefinitions[worldId];
         
-        const progress = {
-            tier2: {
-                unlocked: state.worldTiers.tier2Unlocked,
-                requirements: []
-            },
-            tier3: {
-                unlocked: state.worldTiers.tier3Unlocked,
-                requirements: []
+        if (!world || !world.unlockRequirements) return false;
+        
+        // Check all resource requirements
+        for (const [resource, required] of Object.entries(world.unlockRequirements)) {
+            if (state.resources[resource] < required) {
+                return false;
             }
-        };
-        
-        // Tier 2 progress
-        if (!state.worldTiers.tier2Unlocked) {
-            const basicUpgradesLevel3 = Object.keys(state.upgrades)
-                .filter(key => ['heatGenerator', 'fuelEfficiency'].includes(key))
-                .filter(key => state.upgrades[key] && state.upgrades[key].level >= 3)
-                .length;
-            
-            const totalResources = Object.values(state.resources).reduce((sum, val) => sum + val, 0);
-            
-            progress.tier2.requirements = [
-                {
-                    type: 'worlds',
-                    current: state.worldsCreated,
-                    required: this.worldTierDefinitions.tier2.unlockRequirements.worldsCreated,
-                    completed: state.worldsCreated >= this.worldTierDefinitions.tier2.unlockRequirements.worldsCreated
-                },
-                {
-                    type: 'upgrades',
-                    current: basicUpgradesLevel3,
-                    required: this.worldTierDefinitions.tier2.unlockRequirements.basicUpgradesLevel3,
-                    completed: basicUpgradesLevel3 >= this.worldTierDefinitions.tier2.unlockRequirements.basicUpgradesLevel3,
-                    description: 'Basic upgrades at level 3+'
-                },
-                {
-                    type: 'resources',
-                    current: totalResources,
-                    required: this.worldTierDefinitions.tier2.unlockRequirements.totalResources,
-                    completed: totalResources >= this.worldTierDefinitions.tier2.unlockRequirements.totalResources,
-                    description: 'Total resources (alternative)',
-                    alternative: true
-                }
-            ];
         }
         
-        // Tier 3 progress
-        if (!state.worldTiers.tier3Unlocked && state.worldTiers.tier2Unlocked) {
-            const crossUpgradesLevel3 = Object.keys(state.upgrades)
-                .filter(key => ['thermalAccelerator', 'fuelSynchronizer', 'pressureValve', 'energyMatrix'].includes(key))
-                .filter(key => state.upgrades[key] && state.upgrades[key].level >= 3)
-                .length;
+        return true;
+    }
+
+    getAvailableWorlds() {
+        const state = this.gameState.getState();
+        if (!state || !state.unlockedWorlds) return [this.worldDefinitions[0]];
+        
+        return this.worldDefinitions.filter(world => 
+            state.unlockedWorlds.includes(world.id)
+        );
+    }
+
+    getWorldById(worldId) {
+        return this.worldDefinitions[worldId] || null;
+    }
+
+    selectWorld(worldId) {
+        const state = this.gameState.getState();
+        const world = this.getWorldById(worldId);
+        
+        if (!world || !state.unlockedWorlds.includes(worldId)) {
+            return false;
+        }
+        
+        // Deduct unlock cost if this is the first time selecting this world
+        if (state.worldProgress < worldId) {
+            const cost = world.unlockRequirements;
+            for (const [resource, amount] of Object.entries(cost)) {
+                state.resources[resource] -= amount;
+            }
+            state.worldProgress = worldId;
+            state.worldsCreated++;
+        }
+        
+        // Set as current world
+        state.currentWorld = {
+            ...world,
+            id: worldId,
+            type: world.type,
+            name: world.name,
+            description: world.description,
+            ...world.properties
+        };
+        
+        return true;
+    }
+
+    getNextUnlockableWorld() {
+        const state = this.gameState.getState();
+        
+        for (let i = 0; i < this.worldDefinitions.length; i++) {
+            const world = this.worldDefinitions[i];
             
-            const resourceMilestones = this.worldTierDefinitions.tier3.unlockRequirements.resourceMilestones;
-            const resourceMilestonesmet = 
-                state.resources.heat >= resourceMilestones.heat &&
-                state.resources.fuel >= resourceMilestones.fuel &&
-                state.resources.pressure >= resourceMilestones.pressure;
+            // Skip if already unlocked
+            if (state.unlockedWorlds.includes(world.id)) continue;
             
-            progress.tier3.requirements = [
-                {
-                    type: 'worlds',
-                    current: state.worldsCreated,
-                    required: this.worldTierDefinitions.tier3.unlockRequirements.worldsCreated,
-                    completed: state.worldsCreated >= this.worldTierDefinitions.tier3.unlockRequirements.worldsCreated
-                },
-                {
-                    type: 'cross-upgrades',
-                    current: crossUpgradesLevel3,
-                    required: this.worldTierDefinitions.tier3.unlockRequirements.crossUpgradeLevel3,
-                    completed: crossUpgradesLevel3 >= this.worldTierDefinitions.tier3.unlockRequirements.crossUpgradeLevel3,
-                    description: 'Cross-resource upgrades at level 3+'
-                },
-                {
-                    type: 'milestones',
-                    current: `${state.resources.heat}/${state.resources.fuel}/${state.resources.pressure}`,
-                    required: `${resourceMilestones.heat}/${resourceMilestones.fuel}/${resourceMilestones.pressure}`,
-                    completed: resourceMilestonesmet,
-                    description: 'Heat/Fuel/Pressure milestones (alternative)',
-                    alternative: true
-                }
-            ];
+            // Return the first world that can be unlocked
+            return {
+                world: world,
+                canUnlock: this.canUnlockWorld(world.id),
+                requirements: world.unlockRequirements,
+                progress: this.getUnlockProgress(world.id)
+            };
+        }
+        
+        return null; // All worlds unlocked
+    }
+
+    getUnlockProgress(worldId) {
+        const state = this.gameState.getState();
+        const world = this.worldDefinitions[worldId];
+        
+        if (!world || !world.unlockRequirements) return {};
+        
+        const progress = {};
+        for (const [resource, required] of Object.entries(world.unlockRequirements)) {
+            const current = state.resources[resource] || 0;
+            progress[resource] = {
+                current: current,
+                required: required,
+                percentage: Math.min(100, Math.floor((current / required) * 100))
+            };
         }
         
         return progress;
     }
 
-    getAvailableWorldTypes() {
-        const state = this.gameState.getState();
-        if (!state || !state.worldTiers) return [...this.worldTierDefinitions.tier1.types];
-        
-        let availableTypes = [...this.worldTierDefinitions.tier1.types];
-        
-        if (state.worldTiers.tier2Unlocked) {
-            availableTypes = availableTypes.concat(this.worldTierDefinitions.tier2.types);
-        }
-        
-        if (state.worldTiers.tier3Unlocked) {
-            availableTypes = availableTypes.concat(this.worldTierDefinitions.tier3.types);
-        }
-        
-        return availableTypes;
-    }
-
-    getWorldTypeProperties(worldType) {
-        // Determine which tier this world type belongs to
-        let tier = 'tier1';
-        if (this.worldTierDefinitions.tier2.types.includes(worldType)) {
-            tier = 'tier2';
-        } else if (this.worldTierDefinitions.tier3.types.includes(worldType)) {
-            tier = 'tier3';
-        }
-        
-        const ranges = this.worldTierDefinitions[tier].propertyRanges;
-        
-        return {
-            gravity: +(ranges.gravity.min + Math.random() * (ranges.gravity.max - ranges.gravity.min)).toFixed(1),
-            timeSpeed: +(ranges.timeSpeed.min + Math.random() * (ranges.timeSpeed.max - ranges.timeSpeed.min)).toFixed(1),
-            temperature: Math.floor(ranges.temperature.min + Math.random() * (ranges.temperature.max - ranges.temperature.min)),
-            atmosphere: Math.floor(ranges.atmosphere.min + Math.random() * (ranges.atmosphere.max - ranges.atmosphere.min))
-        };
-    }
-
-    getWorldTypeSpecialEffects(worldType) {
-        const specialEffects = {
-            // Tier 2 Enhanced World Effects
-            'Plasma': {
-                description: "Superheated matter world with extreme energy potential",
-                effects: { heat: 1.5, energy: 1.3, stability: 0.8 }
-            },
-            'Nebula': {
-                description: "Gaseous cloud world with enhanced fuel generation",
-                effects: { fuel: 1.4, pressure: 1.2, heat: 0.9 }
-            },
-            'Toxic': {
-                description: "Dangerous world with high pressure but unstable conditions",
-                effects: { pressure: 1.6, stability: 0.6, energy: 1.1 }
-            },
-            'Frozen': {
-                description: "Ice-locked world with extreme fuel efficiency",
-                effects: { fuel: 1.8, heat: 0.5, stability: 1.2 }
-            },
-            'Quantum': {
-                description: "Reality-shifting world with unpredictable bonuses",
-                effects: { all: 'random' } // Special handling in resource generation
-            },
-            'Hybrid': {
-                description: "Combination world with balanced enhanced generation",
-                effects: { heat: 1.2, fuel: 1.2, pressure: 1.2, energy: 1.1 }
-            },
-            // Tier 3 Exotic World Effects
-            'Dimensional': {
-                description: "Reality-warping world that allows resource conversion",
-                effects: { all: 1.2, special: 'resourceConversion' }
-            },
-            'Singularity': {
-                description: "Extreme gravity world with resource compression abilities",
-                effects: { pressure: 2.0, gravity: 'extreme', special: 'resourceCompression' }
-            },
-            'Living': {
-                description: "Sentient world that adapts to your actions",
-                effects: { adaptive: true, special: 'learningBonus' }
-            },
-            'Infinite': {
-                description: "Limitless world with no resource caps during generation",
-                effects: { special: 'noResourceLimits' }
-            }
-        };
-        
-        return specialEffects[worldType] || { description: "Standard world properties", effects: {} };
-    }
-
-    generateRandomWorld() {
-        const availableTypes = this.getAvailableWorldTypes();
-        const weatherTypes = ['Calm', 'Stormy', 'Chaotic', 'Serene', 'Turbulent'];
-        
-        const worldType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-        const properties = this.getWorldTypeProperties(worldType);
-        const specialEffects = this.getWorldTypeSpecialEffects(worldType);
-        
-        return {
-            id: Date.now(),
-            type: worldType,
-            gravity: properties.gravity,
-            timeSpeed: properties.timeSpeed,
-            // Weather now has a duration (5-10 actions) then rerolls
-            weather: weatherTypes[Math.floor(Math.random() * weatherTypes.length)],
-            weatherDuration: 5 + Math.floor(Math.random() * 6),
-            temperature: properties.temperature,
-            atmosphere: properties.atmosphere,
-            specialEffects: specialEffects,
-            // Determine tier for display
-            tier: this.worldTierDefinitions.tier3.types.includes(worldType) ? 3 : 
-                  this.worldTierDefinitions.tier2.types.includes(worldType) ? 2 : 1
-        };
-    }
-
-    rollNewWeather(world) {
-        const weatherTypes = ['Calm', 'Stormy', 'Chaotic', 'Serene', 'Turbulent'];
-        world.weather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
-        world.weatherDuration = 5 + Math.floor(Math.random() * 6);
-    }
-
-    getTierDefinitions() {
-        return this.worldTierDefinitions;
+    getWorldDefinitions() {
+        return this.worldDefinitions;
     }
 }
