@@ -228,27 +228,85 @@ export class UISystem {
     updateWorldsPageUI() {
         const state = this.gameState.getState();
         
-        // Update total worlds created
+        // Update total worlds unlocked
         const totalWorldsElement = document.getElementById('totalWorldsCreated');
         if (totalWorldsElement) {
-            totalWorldsElement.textContent = state.worldsCreated;
+            totalWorldsElement.textContent = `${state.unlockedWorlds ? state.unlockedWorlds.length : 1} worlds unlocked`;
         }
+        
+        // Update world progression status
+        this.updateWorldProgressionDisplay();
         
         // Update active world benefits
         const benefitsElement = document.getElementById('activeWorldBenefits');
         if (benefitsElement && state.currentWorld) {
+            const world = state.currentWorld;
             let benefits = [];
-            if (state.currentWorld.gravity !== 1.0) {
-                benefits.push(`Heat +${Math.round((state.currentWorld.gravity - 1) * 100)}%`);
+            
+            // Show resource generation benefits
+            if (world.resourceGeneration) {
+                for (const [resource, config] of Object.entries(world.resourceGeneration)) {
+                    if (config.base > 0) {
+                        benefits.push(`${resource.charAt(0).toUpperCase() + resource.slice(1)} +${config.base}`);
+                    }
+                }
             }
-            if (state.currentWorld.timeSpeed !== 1.0) {
-                benefits.push(`Fuel +${Math.round((state.currentWorld.timeSpeed - 1) * 100)}%`);
+            
+            // Environmental bonuses
+            if (world.gravity !== 1.0) {
+                benefits.push(`Gravity ${world.gravity}x`);
             }
-            benefitsElement.textContent = benefits.length > 0 ? benefits.join(', ') : 'None';
+            if (world.timeSpeed !== 1.0) {
+                benefits.push(`Time ${world.timeSpeed}x`);
+            }
+            
+            benefitsElement.textContent = benefits.length > 0 ? benefits.join(', ') : 'Standard generation';
         }
         
         // Update world history
         this.updateWorldHistory();
+    }
+
+    updateWorldProgressionDisplay() {
+        // Find a place to display world progression (e.g., in worlds page)
+        const progressContainer = document.getElementById('worldProgression');
+        if (!progressContainer) return;
+
+        const state = this.gameState.getState();
+        if (!window.game || !window.game.worldSystem) return;
+
+        const worldDefinitions = window.game.worldSystem.getWorldDefinitions();
+        const unlockedWorlds = state.unlockedWorlds || [0];
+        
+        let progressHTML = '<div class="world-progression-list">';
+        
+        worldDefinitions.forEach((world, index) => {
+            const isUnlocked = unlockedWorlds.includes(index);
+            const isCurrent = state.currentWorld && state.currentWorld.id === index;
+            const canUnlock = !isUnlocked && window.game.worldSystem.canUnlockWorld(index);
+            
+            const statusClass = isUnlocked ? 'unlocked' : (canUnlock ? 'can-unlock' : 'locked');
+            const currentClass = isCurrent ? 'current' : '';
+            
+            progressHTML += `
+                <div class="world-progression-item ${statusClass} ${currentClass}">
+                    <div class="world-name">${world.name}</div>
+                    <div class="world-status">
+                        ${isUnlocked ? '✓ Unlocked' : (canUnlock ? '⏳ Can Unlock' : '🔒 Locked')}
+                    </div>
+                    ${isCurrent ? '<div class="current-indicator">Current</div>' : ''}
+                </div>
+            `;
+        });
+        
+        progressHTML += '</div>';
+        progressContainer.innerHTML = progressHTML;
+    }
+
+    setupResourceDescriptions() {
+        // Placeholder for resource description tooltips
+        // This can be expanded later to add hover descriptions for resources
+        console.log('[UISystem] Resource descriptions setup complete');
     }
     
     updateWorldHistory() {
@@ -545,6 +603,15 @@ export class UISystem {
         document.getElementById('energyAmount').textContent = Math.floor(state.resources.energy);
         document.getElementById('stabilityAmount').textContent = Math.floor(state.resources.stability);
         
+        // Update new world-specific resources
+        document.getElementById('waterAmount').textContent = Math.floor(state.resources.water || 0);
+        document.getElementById('oxygenAmount').textContent = Math.floor(state.resources.oxygen || 0);
+        document.getElementById('stoneAmount').textContent = Math.floor(state.resources.stone || 0);
+        document.getElementById('magmaAmount').textContent = Math.floor(state.resources.magma || 0);
+        document.getElementById('iceAmount').textContent = Math.floor(state.resources.ice || 0);
+        document.getElementById('crystalAmount').textContent = Math.floor(state.resources.crystal || 0);
+        document.getElementById('voidEnergyAmount').textContent = Math.floor(state.resources.voidEnergy || 0);
+        
         // Update passive income display
         this.updatePassiveIncomeDisplay();
         
@@ -584,40 +651,49 @@ export class UISystem {
         
         if (state.currentWorld) {
             const world = state.currentWorld;
-            const specialEffectsDesc = world.specialEffects && world.specialEffects.description ? 
-                `<div class="world-special-effects">${world.specialEffects.description}</div>` : '';
+            
+            // Show resources this world generates
+            const resourcesList = world.resourceGeneration ? 
+                Object.keys(world.resourceGeneration).map(resource => 
+                    resource.charAt(0).toUpperCase() + resource.slice(1)
+                ).join(', ') : 'Heat, Fuel';
             
             worldDisplay.innerHTML = `
-                <div class="world-info world-tier-${world.tier || 1}">
-                    <div class="world-property">
-                        <span class="property-name">Type:</span>
-                        <span class="property-value">${world.type}</span>
+                <div class="world-info world-progression">
+                    <div class="world-header">
+                        <div class="world-property">
+                            <span class="property-name">Current World:</span>
+                            <span class="property-value">${world.name}</span>
+                        </div>
+                        <div class="world-description">${world.description}</div>
                     </div>
-                    ${specialEffectsDesc}
-                    <div class="world-property">
-                        <span class="property-name">Gravity:</span>
-                        <span class="property-value">${world.gravity}x</span>
-                    </div>
-                    <div class="world-property">
-                        <span class="property-name">Time Speed:</span>
-                        <span class="property-value">${world.timeSpeed}x</span>
-                    </div>
-                    <div class="world-property">
-                        <span class="property-name">Weather:</span>
-                        <span class="property-value">${world.weather} (${world.weatherDuration || 0} turns)</span>
-                    </div>
-                    <div class="world-property">
-                        <span class="property-name">Temperature:</span>
-                        <span class="property-value">${world.temperature}°C</span>
-                    </div>
-                    <div class="world-property">
-                        <span class="property-name">Atmosphere:</span>
-                        <span class="property-value">${world.atmosphere}%</span>
+                    
+                    <div class="world-details">
+                        <div class="world-property">
+                            <span class="property-name">Generates:</span>
+                            <span class="property-value">${resourcesList}</span>
+                        </div>
+                        <div class="world-property">
+                            <span class="property-name">Gravity:</span>
+                            <span class="property-value">${world.gravity}x</span>
+                        </div>
+                        <div class="world-property">
+                            <span class="property-name">Time Speed:</span>
+                            <span class="property-value">${world.timeSpeed}x</span>
+                        </div>
+                        <div class="world-property">
+                            <span class="property-name">Temperature:</span>
+                            <span class="property-value">${world.temperature}°C</span>
+                        </div>
+                        <div class="world-property">
+                            <span class="property-name">Atmosphere:</span>
+                            <span class="property-value">${world.atmosphere}%</span>
+                        </div>
                     </div>
                 </div>
             `;
         } else {
-            worldDisplay.innerHTML = '<p>No world generated yet</p>';
+            worldDisplay.innerHTML = '<p>Starting with Desert Planet...</p>';
         }
         
         this.updateWeatherWidget();

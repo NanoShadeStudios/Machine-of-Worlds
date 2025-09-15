@@ -67,6 +67,36 @@
                                 <span class="resource-label">Stability:</span>
                                 <span id="stabilityAmount" class="resource-value" aria-label="Stability amount">0</span><span class="resource-max">/50</span>
                             </div>
+                            
+                            <!-- New World-Specific Resources -->
+                            <div class="resource-item new-resource">
+                                <span class="resource-label">Water:</span>
+                                <span id="waterAmount" class="resource-value" aria-label="Water amount">0</span>
+                            </div>
+                            <div class="resource-item new-resource">
+                                <span class="resource-label">Oxygen:</span>
+                                <span id="oxygenAmount" class="resource-value" aria-label="Oxygen amount">0</span>
+                            </div>
+                            <div class="resource-item new-resource">
+                                <span class="resource-label">Stone:</span>
+                                <span id="stoneAmount" class="resource-value" aria-label="Stone amount">0</span>
+                            </div>
+                            <div class="resource-item new-resource">
+                                <span class="resource-label">Magma:</span>
+                                <span id="magmaAmount" class="resource-value" aria-label="Magma amount">0</span>
+                            </div>
+                            <div class="resource-item new-resource">
+                                <span class="resource-label">Ice:</span>
+                                <span id="iceAmount" class="resource-value" aria-label="Ice amount">0</span>
+                            </div>
+                            <div class="resource-item new-resource">
+                                <span class="resource-label">Crystal:</span>
+                                <span id="crystalAmount" class="resource-value" aria-label="Crystal amount">0</span>
+                            </div>
+                            <div class="resource-item new-resource">
+                                <span class="resource-label">Void Energy:</span>
+                                <span id="voidEnergyAmount" class="resource-value" aria-label="Void Energy amount">0</span>
+                            </div>
                         </div>
                         
                         <!-- Actions Section -->
@@ -341,7 +371,79 @@
     <!-- Screen reader only text for important notifications -->
     <div id="sr-announcements" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
 
+    <!-- Dev Log Panel -->
+    <div id="devLog" style="position:fixed;top:10px;right:10px;width:300px;height:200px;background:rgba(0,0,0,0.8);color:#0f0;font-family:monospace;font-size:10px;overflow:auto;z-index:9999;padding:5px;border:1px solid #333;display:none;"></div>
+    
     <!-- Scripts -->
-    <script type="module" src="js/Game.js"></script>
+    <script>
+        // Early console hook for testing
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        function logToServer(level, args) {
+            try {
+                const data = JSON.stringify({level, args: args.map(a => String(a)), ts: Date.now()});
+                navigator.sendBeacon('/__console__', data);
+            } catch(e) { /* ignore */ }
+        }
+        
+        function logToDOM(level, args) {
+            const devLog = document.getElementById('devLog');
+            if (devLog) {
+                devLog.style.display = 'block';
+                devLog.innerHTML += `[${level}] ${args.join(' ')}\n`;
+                devLog.scrollTop = devLog.scrollHeight;
+            }
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            logToDOM('LOG', args);
+            logToServer('log', args);
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            logToDOM('WARN', args);
+            logToServer('warn', args);
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            logToDOM('ERROR', args);
+            logToServer('error', args);
+        };
+        
+        window.addEventListener('error', function(e) {
+            console.error('[ERROR]', e.message, 'at', e.filename + ':' + e.lineno);
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('[REJECTION]', e.reason);
+        });
+        
+        console.log('[BOOT] Console hook loaded');
+    </script>
+    
+    <script src="./debug.js"></script>
+    <script type="module">
+        console.log('[BOOT] Starting game initialization...');
+        document.body.dataset.app = 'booted';
+        document.title += ' • booted';
+        
+        import { Game } from './js/Game.js';
+        console.log('[BOOT] Game class imported successfully');
+        window.game = new Game();
+        console.log('[BOOT] Game instance created');
+        
+        // Test world progression state
+        setTimeout(() => {
+            const state = window.game.gameState.getState();
+            console.log('[BOOT] Current world:', state.currentWorld?.name || 'None');
+            console.log('[BOOT] Unlocked worlds:', state.unlockedWorlds || []);
+            console.log('[BOOT] Resources:', Object.keys(state.resources || {}));
+        }, 1000);
+    </script>
 </body>
 </html>

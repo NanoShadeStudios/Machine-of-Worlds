@@ -7,6 +7,7 @@ Serves static files on port 5000 with proper CORS headers
 import http.server
 import socketserver
 import os
+import json
 
 class CORSHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -26,6 +27,25 @@ class CORSHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         print(f"[Server] {format % args}")
+
+    def do_POST(self):
+        if self.path == '/__console__':
+            try:
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length)
+                log_data = json.loads(post_data.decode('utf-8'))
+                
+                # Print to server output for agent to see
+                print(f"[Browser] {log_data['level'].upper()}: {' '.join(log_data['args'])}")
+                
+                self.send_response(204)
+                self.end_headers()
+            except Exception as e:
+                print(f"[Server] Console log error: {e}")
+                self.send_response(500)
+                self.end_headers()
+        else:
+            self.send_error(404, 'Endpoint not found')
 
 def run_server():
     PORT = 5000
