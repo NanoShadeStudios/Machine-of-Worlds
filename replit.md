@@ -35,14 +35,29 @@
 - **No Backend**: Pure frontend application
 - **Dependencies**: None (self-contained)
 
+## Quick Start Instructions
+1. **To Run Locally**: The "Game Server" workflow should start automatically
+2. **Manual Start**: Run `python server.py` if needed  
+3. **Access Game**: Click the web preview or visit the provided URL
+4. **Port**: Game runs on port 5000 (required for Replit proxy)
+
+## Development Notes
+- **Host Configuration**: Server binds to 0.0.0.0:5000 for Replit iframe compatibility
+- **CORS Headers**: Enabled for cross-origin requests in iframe environment  
+- **Caching**: Disabled for immediate updates during development
+- **Module Loading**: Uses ES6 imports through single entry point (js/Game.js)
+
 ## Recent Changes
 - 2025-09-15: Project imported from GitHub
-- 2025-09-15: Setting up Replit environment configuration
+- 2025-09-15: Created Python static file server for Replit environment
+- 2025-09-15: Simplified script loading to avoid module duplication
+- 2025-09-15: Configured deployment for autoscale static hosting
 
 ## User Preferences
 - None specified yet
 
 ## Deployment Notes
-- Static website deployment target
-- No build process required
-- All assets are self-contained
+- **Target**: Autoscale deployment (static web app)
+- **Command**: `python server.py`
+- **No build process required** - all assets are self-contained
+- **Production ready** with CORS and cache headers optimized for web serving
