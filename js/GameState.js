@@ -9,6 +9,9 @@ export class GameState {
             resources: {
                 heat: 0,
                 fuel: 0,
+                pressure: 0,
+                energy: 0,
+                stability: 0,
                 water: 0,
                 oxygen: 0,
                 stone: 0,
@@ -37,16 +40,7 @@ export class GameState {
                 resourceEfficiency: 1.0, // Multiplier for all resources
                 upgradeCostReduction: 1.0 // Multiplier for upgrade costs
             },
-            // World Tier System (Phase 2 Step 4)
-            worldTiers: {
-                tier1Unlocked: true,
-                tier2Unlocked: false,
-                tier3Unlocked: false
-            },
-            // Unlocks System
-            unlocks: {
-                worldGenerator: false // Unlocked after creating 25 worlds
-            },
+            // Legacy systems removed - using structured world progression instead
             // Achievements System
             achievements: {
                 unlocked: [],
@@ -165,11 +159,22 @@ export class GameState {
         for (const [resource, amount] of Object.entries(resourceDeltas)) {
             if (this.state.resources.hasOwnProperty(resource)) {
                 this.state.resources[resource] += amount;
+            } else {
+                // Initialize new resource types dynamically
+                this.state.resources[resource] = amount;
             }
         }
         
         // Apply resource caps after adding
         this.enforceResourceCaps();
+        
+        // Check for world unlocks after adding resources
+        if (window.game && window.game.worldSystem) {
+            const worldUnlock = window.game.worldSystem.checkWorldUnlocks();
+            if (worldUnlock && window.game.uiSystem) {
+                window.game.uiSystem.showNotification(worldUnlock.message);
+            }
+        }
         
         // Optionally trigger save for important resource changes
         if (shouldSave) {

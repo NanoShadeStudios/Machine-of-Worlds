@@ -123,53 +123,53 @@ export class ResourceSystem {
     generatePressure(world) {
         if (!world) return;
         
-        // Formula: Base 2 + (Gravity × 3) + (Atmosphere/25)
-        let pressureGain = 2 + (world.gravity * 3) + (world.atmosphere / 25);
-        
-        // Weather influences
-        switch (world.weather) {
-            case 'Stormy':
-                pressureGain *= 1.25;
-                break;
-            case 'Turbulent':
-                pressureGain *= 2.0; // +100%
-                break;
-        }
-        
-        // Apply world tier special effects
-        if (world.specialEffects && world.specialEffects.effects && world.specialEffects.effects.pressure) {
-            pressureGain *= world.specialEffects.effects.pressure;
-        }
-        
-        // Special handling for specific world types
-        if (world.specialEffects && world.specialEffects.effects) {
-            const effects = world.specialEffects.effects;
+        // Check if world has pressure generation configured
+        if (world.resourceGeneration && world.resourceGeneration.pressure) {
+            const config = world.resourceGeneration.pressure;
+            const baseGain = config.base || 0;
+            const multiplier = config.multiplier || 1.0;
+            let pressureGain = baseGain * multiplier;
             
-            if (effects.all === 'random') {
-                const randomBonus = 0.5 + Math.random() * 1.5;
-                pressureGain *= randomBonus;
-            } else if (typeof effects.all === 'number') {
-                pressureGain *= effects.all;
-            }
-            
-            // Singularity worlds have extreme pressure
-            if (effects.special === 'resourceCompression') {
+            // Apply environmental bonuses for pressure
+            if (world.atmosphere > 70) {
                 pressureGain *= 1.5;
             }
+            if (world.gravity > 2.0) {
+                pressureGain *= 1.2;
+            }
+            
+            // Apply pressure using centralized cap system
+            this.gameState.addResources({ pressure: Math.floor(pressureGain) });
+        } else {
+            // Legacy calculation for backwards compatibility
+            let pressureGain = 2 + (world.gravity * 3) + (world.atmosphere / 25);
+            
+            // Weather influences (legacy)
+            switch (world.weather) {
+                case 'Stormy':
+                    pressureGain *= 1.25;
+                    break;
+                case 'Turbulent':
+                    pressureGain *= 2.0; // +100%
+                    break;
+            }
+            
+            // High atmosphere bonus
+            if (world.atmosphere > 70) {
+                pressureGain += 2;
+            }
+            
+            // Apply pressure using centralized cap system
+            this.gameState.addResources({ pressure: Math.floor(pressureGain) });
         }
         
-        // High atmosphere bonus
-        if (world.atmosphere > 70) {
-            pressureGain += 2;
-        }
-        
-        // Cross-Resource Upgrade: Pressure Valve
-        if (this.gameState.upgrades && this.gameState.upgrades.pressureValve) {
-            const valveUpgrade = this.gameState.upgrades.pressureValve;
-            if (valveUpgrade.level > 0 && this.gameState.resources.stability > 20) {
-                pressureGain *= (1 + (valveUpgrade.level * 0.25)); // +25% per level when Stability > 20
+        // Cross-Resource Upgrade: Pressure Valve (always apply)
+        const state = this.gameState.getState();
+        if (state.upgrades && state.upgrades.pressureValve) {
+            const valveUpgrade = state.upgrades.pressureValve;
+            if (valveUpgrade.level > 0 && state.resources.stability > 20) {
                 // Converts excess pressure to heat
-                if (this.gameState.resources.pressure > 80) {
+                if (state.resources.pressure > 80) {
                     const heatBonus = Math.floor(valveUpgrade.level * 2);
                     this.gameState.addResources({ heat: heatBonus });
                     
@@ -180,9 +180,6 @@ export class ResourceSystem {
                 }
             }
         }
-        
-        // Apply pressure using centralized cap system
-        this.gameState.addResources({ pressure: Math.floor(pressureGain) });
     }
 
     generateStability(world) {

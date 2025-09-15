@@ -701,7 +701,16 @@ export class Game {
                     type: desertPlanet.type,
                     name: desertPlanet.name,
                     description: desertPlanet.description,
-                    ...desertPlanet.properties
+                    // Flatten properties to top level for ResourceSystem compatibility
+                    gravity: desertPlanet.properties.gravity,
+                    timeSpeed: desertPlanet.properties.timeSpeed,
+                    temperature: desertPlanet.properties.temperature,
+                    atmosphere: desertPlanet.properties.atmosphere,
+                    // Keep properties object for future use
+                    properties: desertPlanet.properties,
+                    // Add weather system for compatibility
+                    weather: 'Calm',
+                    weatherDuration: 10
                 };
             }
         }

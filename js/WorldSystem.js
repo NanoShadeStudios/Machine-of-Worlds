@@ -297,14 +297,23 @@ export class WorldSystem {
             state.worldsCreated++;
         }
         
-        // Set as current world
+        // Set as current world with flattened properties for ResourceSystem compatibility
         state.currentWorld = {
             ...world,
             id: worldId,
             type: world.type,
             name: world.name,
             description: world.description,
-            ...world.properties
+            // Flatten properties to top level for legacy compatibility
+            gravity: world.properties.gravity,
+            timeSpeed: world.properties.timeSpeed,
+            temperature: world.properties.temperature,
+            atmosphere: world.properties.atmosphere,
+            // Keep properties object for future use
+            properties: world.properties,
+            // Add weather system for compatibility
+            weather: 'Calm',
+            weatherDuration: 10
         };
         
         return true;
